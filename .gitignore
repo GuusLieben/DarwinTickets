@@ -32,3 +32,6 @@ buildNumber.properties
 ## gradle ##
 /build/
 /.gradle/
+
+# MacOS
+.DS_Store

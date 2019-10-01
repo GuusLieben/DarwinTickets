@@ -1,11 +1,20 @@
 package net.moddedminecraft.mmctickets.commands;
 
 import com.flowpowered.math.vector.Vector3d;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -21,380 +30,371 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import static net.moddedminecraft.mmctickets.data.ticketStatus.*;
-
 public class read implements CommandExecutor {
 
-  private final Main plugin;
+	private final Main plugin;
 
-  public read(Main plugin) {
-    this.plugin = plugin;
-  }
+	public read ( Main plugin ) {
+		this.plugin = plugin;
+	}
 
-  @Override
-  public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
-    final Optional<Integer> ticketIDOp = args.<Integer>getOne("ticketID");
+	@Override
+	public CommandResult execute ( CommandSource src, CommandContext args ) throws CommandException {
+		final Optional<Integer> ticketIDOp = args.getOne("ticketID");
 
-    final List<TicketData> tickets =
-        new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
+		final List<TicketData> tickets =
+				new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
 
-    UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
-    if (src instanceof Player) {
-      Player player = (Player) src;
-      uuid = player.getUniqueId();
-    }
+		UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
+		if (src instanceof Player) {
+			Player player = (Player) src;
+			uuid = player.getUniqueId();
+		}
 
-    if (tickets.isEmpty()) {
-      throw new CommandException(Messages.getErrorGen("Tickets list is empty."));
-    } else {
-      if (!ticketIDOp.isPresent()) {
-        if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)) {
-          PaginationService paginationService =
-              Sponge.getServiceManager().provide(PaginationService.class).get();
-          List<Text> contents = new ArrayList<>();
-          int totalTickets = 0;
-          for (TicketData ticket : tickets) {
-            if (Config.hideOffline) {
-              if (CommonUtil.checkUserOnline(
-                  CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()))) {
-                if (ticket.getStatus() == Claimed || ticket.getStatus() == Open) {
-                  String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
-                  totalTickets++;
-                  Text.Builder send = Text.builder();
-                  String status = "";
-                  if (ticket.getStatus() == Claimed) status = "&bClaimed - ";
-                  send.append(
-                      plugin.fromLegacy(
-                          status
-                              + "&3#"
-                              + ticket.getTicketID()
-                              + " "
-                              + CommonUtil.getTimeAgo(ticket.getTimestamp())
-                              + " by "
-                              + online
-                              + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())
-                              + " &3on "
-                              + CommonUtil.checkTicketServer(ticket.getServer())
-                              + " &3- &7"
-                              + CommonUtil.shortenMessage(ticket.getMessage())));
-                  send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
-                  send.onHover(
-                      TextActions.showText(
-                          plugin.fromLegacy(
-                              "Click here to get more details for ticket #"
-                                  + ticket.getTicketID())));
-                  contents.add(send.build());
-                }
-              }
-            } else {
-              if (ticket.getStatus() == Claimed || ticket.getStatus() == Open) {
-                String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
-                totalTickets++;
-                Text.Builder send = Text.builder();
-                String status = "";
-                if (ticket.getStatus() == Claimed) status = "&bClaimed - ";
-                send.append(
-                    plugin.fromLegacy(
-                        status
-                            + "&3#"
-                            + ticket.getTicketID()
-                            + " "
-                            + CommonUtil.getTimeAgo(ticket.getTimestamp())
-                            + " by "
-                            + online
-                            + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())
-                            + " &3on "
-                            + CommonUtil.checkTicketServer(ticket.getServer())
-                            + " &3- &7"
-                            + CommonUtil.shortenMessage(ticket.getMessage())));
-                send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
-                send.onHover(
-                    TextActions.showText(
-                        plugin.fromLegacy(
-                            "Click here to get more details for ticket #" + ticket.getTicketID())));
-                contents.add(send.build());
-              }
-            }
-          }
+		if (tickets.isEmpty()) {
+			throw new CommandException(Messages.getErrorGen("Tickets list is empty."));
+		} else {
+			if (!ticketIDOp.isPresent()) {
+				if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)) {
+					PaginationService paginationService =
+							Sponge.getServiceManager().provide(PaginationService.class).get();
+					List<Text> contents = new ArrayList<>();
+					int totalTickets = 0;
+					for (TicketData ticket : tickets) {
+						if (Config.hideOffline) {
+							if (CommonUtil.checkUserOnline(
+									CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()))) {
+								if (ticket.getStatus() == Claimed || ticket.getStatus() == Open) {
+									String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
+									totalTickets++;
+									Text.Builder send = Text.builder();
+									String status = "";
+									if (ticket.getStatus() == Claimed) status = "&bClaimed - ";
+									send.append(
+											plugin.fromLegacy(
+													status
+															+ "&3#"
+															+ ticket.getTicketID()
+															+ " "
+															+ CommonUtil.getTimeAgo(ticket.getTimestamp())
+															+ " by "
+															+ online
+															+ CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())
+															+ " &3on "
+															+ CommonUtil.checkTicketServer(ticket.getServer())
+															+ " &3- &7"
+															+ CommonUtil.shortenMessage(ticket.getMessage())));
+									send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
+									send.onHover(
+											TextActions.showText(
+													plugin.fromLegacy(
+															"Click here to get more details for ticket #"
+																	+ ticket.getTicketID())));
+									contents.add(send.build());
+								}
+							}
+						} else {
+							if (ticket.getStatus() == Claimed || ticket.getStatus() == Open) {
+								String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
+								totalTickets++;
+								Text.Builder send = Text.builder();
+								String status = "";
+								if (ticket.getStatus() == Claimed) status = "&bClaimed - ";
+								send.append(
+										plugin.fromLegacy(
+												status
+														+ "&3#"
+														+ ticket.getTicketID()
+														+ " "
+														+ CommonUtil.getTimeAgo(ticket.getTimestamp())
+														+ " by "
+														+ online
+														+ CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())
+														+ " &3on "
+														+ CommonUtil.checkTicketServer(ticket.getServer())
+														+ " &3- &7"
+														+ CommonUtil.shortenMessage(ticket.getMessage())));
+								send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
+								send.onHover(
+										TextActions.showText(
+												plugin.fromLegacy(
+														"Click here to get more details for ticket #" + ticket.getTicketID())));
+								contents.add(send.build());
+							}
+						}
+					}
 
-          if (contents.isEmpty()) {
-            contents.add(Messages.getTicketReadNone());
-          }
-          int ticketsPer = 5;
-          if (Config.ticketsPerPage > 0) {
-            ticketsPer = Config.ticketsPerPage;
-          }
-          paginationService
-              .builder()
-              .title(plugin.fromLegacy("&3" + totalTickets + " Open Tickets"))
-              .contents(contents)
-              .padding(Text.of("-"))
-              .linesPerPage(ticketsPer + 2)
-              .sendTo(src);
-          return CommandResult.success();
-        } else {
-          if (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF)) {
-            throw new CommandException(Messages.getErrorIncorrectUsage("/check self or /check #"));
-          } else {
-            throw new CommandException(
-                Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_ALL));
-          }
-        }
-      } else {
-        if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)
-            || (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF))) {
-          PaginationService paginationService =
-              Sponge.getServiceManager().provide(PaginationService.class).get();
-          List<Text> contents = new ArrayList<>();
-          int ticketID = ticketIDOp.get();
-          String ticketStatus = "";
-          for (TicketData ticket : tickets) {
-            if (ticket.getTicketID() == ticketID) {
-              if (!ticket.getPlayerUUID().equals(uuid)
-                  && !src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)) {
-                throw new CommandException(Messages.getErrorTicketOwner());
-              }
-              ticketStatus = CommonUtil.getTicketStatusColour(ticket.getStatus());
-              String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
-              Optional<World> worldOptional = Sponge.getServer().getWorld(ticket.getWorld());
+					if (contents.isEmpty()) {
+						contents.add(Messages.getTicketReadNone());
+					}
+					int ticketsPer = 5;
+					if (Config.ticketsPerPage > 0) {
+						ticketsPer = Config.ticketsPerPage;
+					}
+					paginationService
+							.builder()
+							.title(plugin.fromLegacy("&3" + totalTickets + " Open Tickets"))
+							.contents(contents)
+							.padding(Text.of("-"))
+							.linesPerPage(ticketsPer + 2)
+							.sendTo(src);
+					return CommandResult.success();
+				} else {
+					if (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF)) {
+						throw new CommandException(Messages.getErrorIncorrectUsage("/check self or /check #"));
+					} else {
+						throw new CommandException(
+								Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_ALL));
+					}
+				}
+			} else {
+				if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)
+						|| (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF))) {
+					PaginationService paginationService =
+							Sponge.getServiceManager().provide(PaginationService.class).get();
+					List<Text> contents = new ArrayList<>();
+					int ticketID = ticketIDOp.get();
+					String ticketStatus = "";
+					for (TicketData ticket : tickets) {
+						if (ticket.getTicketID() == ticketID) {
+							if (!ticket.getPlayerUUID().equals(uuid)
+									&& !src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)) {
+								throw new CommandException(Messages.getErrorTicketOwner());
+							}
+							ticketStatus = CommonUtil.getTicketStatusColour(ticket.getStatus());
+							String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
+							Optional<World> worldOptional = Sponge.getServer().getWorld(ticket.getWorld());
 
-              Text.Builder action = Text.builder();
+							Text.Builder action = Text.builder();
 
-              if (ticket.getStatus() == Open || ticket.getStatus() == Claimed) {
-                if (ticket.getStatus() == Open
-                    && src.hasPermission(Permissions.COMMAND_TICKET_CLAIM)) {
-                  action.append(
-                      Text.builder()
-                          .append(plugin.fromLegacy(Messages.getClaimButton()))
-                          .onHover(
-                              TextActions.showText(
-                                  plugin.fromLegacy(Messages.getClaimButtonHover())))
-                          .onClick(TextActions.runCommand("/ticket claim " + ticket.getTicketID()))
-                          .build());
-                  action.append(plugin.fromLegacy(" "));
-                }
-                if (ticket.getStatus() == Claimed) {
-                  if (ticket.getStaffUUID().equals(uuid)
-                      && src.hasPermission(Permissions.COMMAND_TICKET_UNCLAIM)) {
-                    action.append(
-                        Text.builder()
-                            .append(plugin.fromLegacy(Messages.getUnclaimButton()))
-                            .onHover(
-                                TextActions.showText(
-                                    plugin.fromLegacy(Messages.getUnclaimButtonHover())))
-                            .onClick(
-                                TextActions.runCommand("/ticket unclaim " + ticket.getTicketID()))
-                            .build());
-                    action.append(plugin.fromLegacy(" "));
-                  }
-                }
-                if ((ticket.getStatus() == Open
-                        || ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
-                    && src.hasPermission(Permissions.COMMAND_TICKET_HOLD)) {
-                  action.append(
-                      Text.builder()
-                          .append(plugin.fromLegacy(Messages.getHoldButton()))
-                          .onHover(
-                              TextActions.showText(
-                                  plugin.fromLegacy(Messages.getHoldButtonHover())))
-                          .onClick(TextActions.runCommand("/ticket hold " + ticket.getTicketID()))
-                          .build());
-                  action.append(plugin.fromLegacy(" "));
-                }
-              }
-              if (ticket.getStatus() == Held || ticket.getStatus() == Closed) {
-                if (src.hasPermission(Permissions.COMMAND_TICKET_REOPEN)) {
-                  action.append(
-                      Text.builder()
-                          .append(plugin.fromLegacy(Messages.getReopenButton()))
-                          .onHover(
-                              TextActions.showText(
-                                  plugin.fromLegacy(Messages.getReopenButtonHover())))
-                          .onClick(TextActions.runCommand("/ticket reopen " + ticket.getTicketID()))
-                          .build());
-                  action.append(plugin.fromLegacy(" "));
-                }
-              }
-              if (ticket.getStatus() == Held
-                  || ticket.getStatus() == Claimed
-                  || ticket.getStatus() == Open) {
-                if ((ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
-                    || ticket.getStatus() == Open
-                    || ticket.getStatus() == Held) {
-                  if (src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_ALL)
-                      || src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_SELF)) {
-                    action.append(
-                        Text.builder()
-                            .append(plugin.fromLegacy(Messages.getCloseButton()))
-                            .onHover(
-                                TextActions.showText(
-                                    plugin.fromLegacy(Messages.getCloseButtonHover())))
-                            .onClick(
-                                TextActions.runCommand("/ticket complete " + ticket.getTicketID()))
-                            .build());
-                    action.append(plugin.fromLegacy(" "));
-                  }
-                }
-              }
-              if (ticket.getStatus() == Held
-                  || ticket.getStatus() == Claimed
-                  || ticket.getStatus() == Open) {
-                if (ticket.getStatus() == Held
-                    || ticket.getStatus() == Claimed
-                    || ticket.getStatus() == Open) {
-                  if ((ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
-                      || ticket.getStatus() == Open
-                      || ticket.getStatus() == Held) {
-                    if (src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_ALL)
-                        || src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_SELF)) {
-                      action.append(
-                          Text.builder()
-                              .append(plugin.fromLegacy(Messages.getRejectButton()))
-                              .onHover(
-                                  TextActions.showText(
-                                      plugin.fromLegacy(Messages.getRejectButtonHover())))
-                              .onClick(
-                                  TextActions.runCommand("/ticket reject " + ticket.getTicketID()))
-                              .build());
-                      action.append(plugin.fromLegacy(" "));
-                    }
-                  }
-                }
-              }
-              if (ticket.getComment().isEmpty()
-                  && src.hasPermission(Permissions.COMMAND_TICKET_COMMENT)) {
-                if (ticket.getStatus() != Claimed
-                    || ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid)) {
-                  action.append(
-                      Text.builder()
-                          .append(plugin.fromLegacy(Messages.getCommentButton()))
-                          .onHover(
-                              TextActions.showText(
-                                  plugin.fromLegacy(Messages.getCommentButtonHover())))
-                          .onClick(
-                              TextActions.suggestCommand(
-                                  "/ticket comment " + ticket.getTicketID() + " "))
-                          .build());
-                }
-              }
+							if (ticket.getStatus() == Open || ticket.getStatus() == Claimed) {
+								if (ticket.getStatus() == Open
+										&& src.hasPermission(Permissions.COMMAND_TICKET_CLAIM)) {
+									action.append(
+											Text.builder()
+													.append(plugin.fromLegacy(Messages.getClaimButton()))
+													.onHover(
+															TextActions.showText(
+																	plugin.fromLegacy(Messages.getClaimButtonHover())))
+													.onClick(TextActions.runCommand("/ticket claim " + ticket.getTicketID()))
+													.build());
+									action.append(plugin.fromLegacy(" "));
+								}
+								if (ticket.getStatus() == Claimed) {
+									if (ticket.getStaffUUID().equals(uuid)
+											&& src.hasPermission(Permissions.COMMAND_TICKET_UNCLAIM)) {
+										action.append(
+												Text.builder()
+														.append(plugin.fromLegacy(Messages.getUnclaimButton()))
+														.onHover(
+																TextActions.showText(
+																		plugin.fromLegacy(Messages.getUnclaimButtonHover())))
+														.onClick(
+																TextActions.runCommand("/ticket unclaim " + ticket.getTicketID()))
+														.build());
+										action.append(plugin.fromLegacy(" "));
+									}
+								}
+								if ((ticket.getStatus() == Open
+										|| ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
+										&& src.hasPermission(Permissions.COMMAND_TICKET_HOLD)) {
+									action.append(
+											Text.builder()
+													.append(plugin.fromLegacy(Messages.getHoldButton()))
+													.onHover(
+															TextActions.showText(
+																	plugin.fromLegacy(Messages.getHoldButtonHover())))
+													.onClick(TextActions.runCommand("/ticket hold " + ticket.getTicketID()))
+													.build());
+									action.append(plugin.fromLegacy(" "));
+								}
+							}
+							if (ticket.getStatus() == Held || ticket.getStatus() == Closed) {
+								if (src.hasPermission(Permissions.COMMAND_TICKET_REOPEN)) {
+									action.append(
+											Text.builder()
+													.append(plugin.fromLegacy(Messages.getReopenButton()))
+													.onHover(
+															TextActions.showText(
+																	plugin.fromLegacy(Messages.getReopenButtonHover())))
+													.onClick(TextActions.runCommand("/ticket reopen " + ticket.getTicketID()))
+													.build());
+									action.append(plugin.fromLegacy(" "));
+								}
+							}
+							if (ticket.getStatus() == Held
+									|| ticket.getStatus() == Claimed
+									|| ticket.getStatus() == Open) {
+								if ((ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
+										|| ticket.getStatus() == Open
+										|| ticket.getStatus() == Held) {
+									if (src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_ALL)
+											|| src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_SELF)) {
+										action.append(
+												Text.builder()
+														.append(plugin.fromLegacy(Messages.getCloseButton()))
+														.onHover(
+																TextActions.showText(
+																		plugin.fromLegacy(Messages.getCloseButtonHover())))
+														.onClick(
+																TextActions.runCommand("/ticket complete " + ticket.getTicketID()))
+														.build());
+										action.append(plugin.fromLegacy(" "));
+									}
+								}
+							}
+							if (ticket.getStatus() == Held
+									|| ticket.getStatus() == Claimed
+									|| ticket.getStatus() == Open) {
+								if (ticket.getStatus() == Held
+										|| ticket.getStatus() == Claimed
+										|| ticket.getStatus() == Open) {
+									if ((ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid))
+											|| ticket.getStatus() == Open
+											|| ticket.getStatus() == Held) {
+										if (src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_ALL)
+												|| src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_SELF)) {
+											action.append(
+													Text.builder()
+															.append(plugin.fromLegacy(Messages.getRejectButton()))
+															.onHover(
+																	TextActions.showText(
+																			plugin.fromLegacy(Messages.getRejectButtonHover())))
+															.onClick(
+																	TextActions.runCommand("/ticket reject " + ticket.getTicketID()))
+															.build());
+											action.append(plugin.fromLegacy(" "));
+										}
+									}
+								}
+							}
+							if (ticket.getComment().isEmpty()
+									&& src.hasPermission(Permissions.COMMAND_TICKET_COMMENT)) {
+								if (ticket.getStatus() != Claimed
+										|| ticket.getStatus() == Claimed && ticket.getStaffUUID().equals(uuid)) {
+									action.append(
+											Text.builder()
+													.append(plugin.fromLegacy(Messages.getCommentButton()))
+													.onHover(
+															TextActions.showText(
+																	plugin.fromLegacy(Messages.getCommentButtonHover())))
+													.onClick(
+															TextActions.suggestCommand(
+																	"/ticket comment " + ticket.getTicketID() + " "))
+													.build());
+								}
+							}
 
-              Text.Builder send = Text.builder();
-              send.append(
-                  Text.of(
-                      TextColors.AQUA,
-                      "[",
-                      TextColors.DARK_AQUA,
-                      "Teleport",
-                      TextColors.AQUA,
-                      "]"));
-              if (src.hasPermission(Permissions.COMMAND_TICKET_TELEPORT)
-                  && ticket.getServer().equalsIgnoreCase(Config.server)) {
-                send.onHover(TextActions.showText(Messages.getTicketOnHoverTeleportTo()));
-                worldOptional.ifPresent(
-                    world ->
-                        send.onClick(
-                            TextActions.executeCallback(
-                                teleportTo(
-                                    world,
-                                    ticket.getX(),
-                                    ticket.getY(),
-                                    ticket.getZ(),
-                                    ticket.getPitch(),
-                                    ticket.getYaw(),
-                                    ticketID))));
-              }
+							Text.Builder send = Text.builder();
+							send.append(
+									Text.of(
+											TextColors.AQUA,
+											"[",
+											TextColors.DARK_AQUA,
+											"Teleport",
+											TextColors.AQUA,
+											"]"));
+							if (src.hasPermission(Permissions.COMMAND_TICKET_TELEPORT)
+									&& ticket.getServer().equalsIgnoreCase(Config.server)) {
+								send.onHover(TextActions.showText(Messages.getTicketOnHoverTeleportTo()));
+								worldOptional.ifPresent(
+										world ->
+												send.onClick(
+														TextActions.executeCallback(
+																teleportTo(
+																		world,
+																		ticket.getX(),
+																		ticket.getY(),
+																		ticket.getZ(),
+																		ticket.getPitch(),
+																		ticket.getYaw(),
+																		ticketID))));
+							}
 
-              if (!action.build().isEmpty()) {
-                contents.add(action.build());
-              }
-              if (!ticket
-                  .getStaffUUID()
-                  .toString()
-                  .equals("00000000-0000-0000-0000-000000000000")) {
-                if (ticket.getStatus() == Claimed)
-                  contents.add(
-                      plugin.fromLegacy(
-                          "&bClaimed by: &7"
-                              + CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
-                else if (ticket.getStatus() == Closed)
-                  contents.add(
-                      plugin.fromLegacy(
-                          "&bHandled by: &7"
-                              + CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
-              }
-              if (!ticket.getComment().isEmpty()) {
-                contents.add(plugin.fromLegacy("&bComment: &7" + ticket.getComment()));
-              }
+							if (!action.build().isEmpty()) {
+								contents.add(action.build());
+							}
+							if (!ticket
+									.getStaffUUID()
+									.toString()
+									.equals("00000000-0000-0000-0000-000000000000")) {
+								if (ticket.getStatus() == Claimed)
+									contents.add(
+											plugin.fromLegacy(
+													"&bClaimed by: &7"
+															+ CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
+								else if (ticket.getStatus() == Closed)
+									contents.add(
+											plugin.fromLegacy(
+													"&bHandled by: &7"
+															+ CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
+							}
+							if (!ticket.getComment().isEmpty()) {
+								contents.add(plugin.fromLegacy("&bComment: &7" + ticket.getComment()));
+							}
 
-              int ticketNum =
-                  (int)
-                      tickets.stream()
-                          .filter(
-                              t ->
-                                  t.getPlayerUUID()
-                                          .toString()
-                                          .equals(ticket.getPlayerUUID().toString())
-                                      && t.getMessage().equals(ticket.getMessage()))
-                          .count();
+							int ticketNum =
+									(int)
+											tickets.stream()
+													.filter(
+															t ->
+																	t.getPlayerUUID()
+																			.toString()
+																			.equals(ticket.getPlayerUUID().toString())
+																			&& t.getMessage().equals(ticket.getMessage()))
+													.count();
 
-              contents.add(
-                  Text.of(
-                      plugin.fromLegacy(
-                          "&bOpened by: "
-                              + online
-                              + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())),
-                      TextColors.DARK_AQUA,
-                      " | Submission : #" + ticketNum));
+							contents.add(
+									Text.of(
+											plugin.fromLegacy(
+													"&bOpened by: "
+															+ online
+															+ CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID())),
+											TextColors.DARK_AQUA,
+											" | Submission : #" + ticketNum));
 
-              contents.add(
-                  plugin.fromLegacy("&bWhen: " + CommonUtil.getTimeAgo(ticket.getTimestamp())));
-              contents.add(
-                  plugin.fromLegacy(
-                      "&bServer: " + CommonUtil.checkTicketServer(ticket.getServer())));
-              if (!ticket
-                  .getPlayerUUID()
-                  .toString()
-                  .equals("00000000-0000-0000-0000-000000000000")) {
-                contents.add(send.build());
-              }
-              contents.add(plugin.fromLegacy("&7" + ticket.getMessage()));
-            }
-          }
+							contents.add(
+									plugin.fromLegacy("&bWhen: " + CommonUtil.getTimeAgo(ticket.getTimestamp())));
+							contents.add(
+									plugin.fromLegacy(
+											"&bServer: " + CommonUtil.checkTicketServer(ticket.getServer())));
+							if (!ticket
+									.getPlayerUUID()
+									.toString()
+									.equals("00000000-0000-0000-0000-000000000000")) {
+								contents.add(send.build());
+							}
+							contents.add(plugin.fromLegacy("&7" + ticket.getMessage()));
+						}
+					}
 
-          if (contents.isEmpty()) {
-            throw new CommandException(Messages.getTicketNotExist(ticketID));
-          }
+					if (contents.isEmpty()) {
+						throw new CommandException(Messages.getTicketNotExist(ticketID));
+					}
 
-          paginationService
-              .builder()
-              .title(plugin.fromLegacy("&3Request #" + ticketID + " &b- &3" + ticketStatus))
-              .contents(contents)
-              .padding(plugin.fromLegacy("&b-"))
-              .sendTo(src);
-          return CommandResult.success();
-        } else {
-          throw new CommandException(
-              Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_SELF));
-        }
-      }
-    }
-  }
+					paginationService
+							.builder()
+							.title(plugin.fromLegacy("&3Request #" + ticketID + " &b- &3" + ticketStatus))
+							.contents(contents)
+							.padding(plugin.fromLegacy("&b-"))
+							.sendTo(src);
+					return CommandResult.success();
+				} else {
+					throw new CommandException(
+							Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_SELF));
+				}
+			}
+		}
+	}
 
-  private Consumer<CommandSource> teleportTo(
-      World world, int x, int y, int z, double pitch, double yaw, int ticketID) {
-    return consumer -> {
-      Player player = (Player) consumer;
-      Location loc = new Location(world, x, y, z);
-      Vector3d vect = new Vector3d(pitch, yaw, 0);
-      player.setLocationAndRotation(loc, vect);
-      player.sendMessage(Messages.getTeleportToTicket(ticketID));
-    };
-  }
+	private Consumer<CommandSource> teleportTo (
+			World world, int x, int y, int z, double pitch, double yaw, int ticketID ) {
+		return consumer -> {
+			Player player = (Player) consumer;
+			Location loc = new Location(world, x, y, z);
+			Vector3d vect = new Vector3d(pitch, yaw, 0);
+			player.setLocationAndRotation(loc, vect);
+			player.sendMessage(Messages.getTeleportToTicket(ticketID));
+		};
+	}
 }

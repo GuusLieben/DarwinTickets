@@ -1,32 +1,31 @@
 package net.moddedminecraft.mmctickets.database;
 
-import net.moddedminecraft.mmctickets.data.PlayerData;
-import net.moddedminecraft.mmctickets.data.TicketData;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.TicketData;
 
 public interface IDataStore {
 
-    public abstract String getDatabaseName();
+	String getDatabaseName ();
 
-    public abstract boolean load();
+	boolean load ();
 
-    public abstract List<TicketData> getTicketData();
+	List<TicketData> getTicketData ();
 
-    public abstract List<PlayerData> getPlayerData();
+	List<PlayerData> getPlayerData ();
 
-    public abstract ArrayList<UUID> getNotifications();
+	ArrayList<UUID> getNotifications ();
 
-    public abstract Optional<TicketData> getTicket(int ticketID);
+	Optional<TicketData> getTicket ( int ticketID );
 
-    public abstract boolean addTicketData(TicketData ticketData);
+	boolean addTicketData ( TicketData ticketData );
 
-    public abstract boolean addPlayerData(PlayerData playerData);
+	boolean addPlayerData ( PlayerData playerData );
 
-    public abstract boolean updateTicketData(TicketData ticketData);
+	boolean updateTicketData ( TicketData ticketData );
 
-    public abstract boolean updatePlayerData(PlayerData playerData);
+	boolean updatePlayerData ( PlayerData playerData );
 }

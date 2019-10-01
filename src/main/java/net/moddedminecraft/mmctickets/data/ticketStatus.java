@@ -2,16 +2,16 @@ package net.moddedminecraft.mmctickets.data;
 
 
 public enum ticketStatus {
-    Open("Open"), Claimed("Claimed"), Held("Held"), Closed("Closed");
+	Open("Open"), Claimed("Claimed"), Held("Held"), Closed("Closed");
 
-    private String status;
+	private String status;
 
-    ticketStatus(String stat) {
-        this.status = stat;
-    }
+	ticketStatus ( String stat ) {
+		this.status = stat;
+	}
 
-    @Override
-    public String toString(){
-        return status;
-    }
+	@Override
+	public String toString () {
+		return status;
+	}
 }
