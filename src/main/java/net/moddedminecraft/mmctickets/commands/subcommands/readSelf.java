@@ -52,10 +52,10 @@ public class readSelf implements CommandExecutor {
                     String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
                     Text.Builder send = Text.builder();
                     String status = "";
-                    if (ticket.getStatus() == Open) status = "&aOpen &e- ";
-                    if (ticket.getStatus() == Held) status = "&6Held &e- ";
-                    if (ticket.getStatus() == Closed) status = "&cClosed &e- ";
-                    send.append(plugin.fromLegacy(status + "&6#" + ticket.getTicketID() + " " + CommonUtil.getTimeAgo(ticket.getTimestamp()) + " by " + online + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " &6on " + CommonUtil.checkTicketServer(ticket.getServer()) + " &6- &7" + CommonUtil.shortenMessage(ticket.getMessage())));
+                    if (ticket.getStatus() == Open) status = "&bOpen &b- ";
+                    if (ticket.getStatus() == Held) status = "&3Held &b- ";
+                    if (ticket.getStatus() == Closed) status = "&bClosed &b- ";
+                    send.append(plugin.fromLegacy(status + "&3#" + ticket.getTicketID() + " " + CommonUtil.getTimeAgo(ticket.getTimestamp()) + " by " + online + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " &3on " + CommonUtil.checkTicketServer(ticket.getServer()) + " &3- &7" + CommonUtil.shortenMessage(ticket.getMessage())));
                     send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
                     send.onHover(TextActions.showText(plugin.fromLegacy("Click here to get more details for ticket #" + ticket.getTicketID())));
                     contents.add(send.build());
@@ -67,7 +67,7 @@ public class readSelf implements CommandExecutor {
                 contents.add(Messages.getTicketReadNoneSelf());
             }
             paginationService.builder()
-                    .title(plugin.fromLegacy("&6Your Tickets"))
+                    .title(plugin.fromLegacy("&3Your Tickets"))
                     .contents(Lists.reverse(contents))
                     .padding(Text.of("-"))
                     .sendTo(src);

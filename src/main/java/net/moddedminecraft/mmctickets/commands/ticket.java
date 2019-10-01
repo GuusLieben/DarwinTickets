@@ -50,14 +50,14 @@ public class ticket implements CommandExecutor {
 
         if (!contents.isEmpty()) {
             paginationService.builder()
-                    .title(plugin.fromLegacy("&6MMCTickets Help"))
+                    .title(plugin.fromLegacy("&3MMCTickets Help"))
                     .contents(contents)
                     .header(plugin.fromLegacy("&3[] = required  () = optional"))
                     .padding(Text.of("="))
                     .sendTo(sender);
         } else {
             paginationService.builder()
-                    .title(plugin.fromLegacy("&6MMCTickets Help"))
+                    .title(plugin.fromLegacy("&3MMCTickets Help"))
                     .contents(plugin.fromLegacy("&3You currently do not have any permissions for this plugin."))
                     .padding(Text.of("="))
                     .sendTo(sender);

@@ -30,6 +30,7 @@ dependencies {
     compile group: 'org.bstats', name: 'bstats-sponge', version:'1.4'
     compileOnly group: 'org.projectlombok', name: 'lombok', version:'1.18.0'
     compileOnly group: 'org.spongepowered', name: 'spongeapi', version:'7.1.0-SNAPSHOT'
+    compile fileTree(dir: 'libs', include: '*.jar')
 }
 
 shadowJar {

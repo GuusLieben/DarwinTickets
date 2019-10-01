@@ -51,7 +51,8 @@ public final class H2DataStore implements IDataStore {
                     + " message VARCHAR(700) NOT NULL,"
                     + " status VARCHAR(20) NOT NULL,"
                     + " notified INTEGER NOT NULL,"
-                    + " server VARCHAR(100) NOT NULL"
+                    + " server VARCHAR(100) NOT NULL,"
+                    + " discord VARCHAR(100) NOT NULL"
                     + ");");
 
             connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS " + Config.h2Prefix + "playerdata ("
@@ -92,6 +93,7 @@ public final class H2DataStore implements IDataStore {
                         rs.getInt("notified"),
                         rs.getString("server")
                 );
+                ticketData.setDiscordMessage(rs.getString("discord"));
                 ticketList.add(ticketData);
             }
             return ticketList;
@@ -151,7 +153,7 @@ public final class H2DataStore implements IDataStore {
     @Override
     public boolean addTicketData(TicketData ticketData) {
         try (Connection connection = getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
             statement.setInt(1, ticketData.getTicketID());
             statement.setString(2, ticketData.getPlayerUUID().toString());
             statement.setString(3, ticketData.getStaffUUID().toString());
@@ -167,6 +169,7 @@ public final class H2DataStore implements IDataStore {
             statement.setString(13, ticketData.getStatus().toString());
             statement.setInt(14, ticketData.getNotified());
             statement.setString(15, ticketData.getServer());
+            statement.setString(16, ticketData.getDiscordMessage());
             return statement.executeUpdate() > 0;
         } catch (SQLException ex) {
             plugin.getLogger().error("H2: Error adding ticketdata", ex);
@@ -191,7 +194,7 @@ public final class H2DataStore implements IDataStore {
     @Override
     public boolean updateTicketData(TicketData ticketData) {
         try (Connection connection = getConnection()) {
-            PreparedStatement statement = connection.prepareStatement("MERGE INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+            PreparedStatement statement = connection.prepareStatement("MERGE INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
             statement.setInt(1, ticketData.getTicketID());
             statement.setString(2, ticketData.getPlayerUUID().toString());
             statement.setString(3, ticketData.getStaffUUID().toString());
@@ -207,6 +210,7 @@ public final class H2DataStore implements IDataStore {
             statement.setString(13, ticketData.getStatus().toString());
             statement.setInt(14, ticketData.getNotified());
             statement.setString(15, ticketData.getServer());
+            statement.setString(16, ticketData.getDiscordMessage());
             return statement.executeUpdate() > 0;
         } catch (SQLException ex) {
             plugin.getLogger().error("H2: Error updating ticketdata", ex);

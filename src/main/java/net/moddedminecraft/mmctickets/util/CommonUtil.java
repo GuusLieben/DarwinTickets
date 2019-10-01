@@ -37,19 +37,19 @@ public class CommonUtil {
 
         final long diff = now - time;
         if (diff < MINUTE_MILLIS) {
-            return "&ajust now&6";
+            return "&bjust now&3";
         } else if (diff < 2 * MINUTE_MILLIS) {
-            return "&a1 minute ago&6"; // a minute ago
+            return "&b1 minute ago&3"; // a minute ago
         } else if (diff < 50 * MINUTE_MILLIS) {
-            return "&a" + diff / MINUTE_MILLIS + " min ago&6";
+            return "&b" + diff / MINUTE_MILLIS + " min ago&3";
         } else if (diff < 90 * MINUTE_MILLIS) {
-            return "&a1 hour ago&6";
+            return "&b1 hour ago&3";
         } else if (diff < 24 * HOUR_MILLIS) {
-            return "&e" + diff / HOUR_MILLIS + " hours ago&6";
+            return "&b" + diff / HOUR_MILLIS + " hours ago&3";
         } else if (diff < 48 * HOUR_MILLIS) {
-            return "&cyesterday&6";
+            return "&byesterday&3";
         } else {
-            return "&c" + diff / DAY_MILLIS + " days ago&6";
+            return "&b" + diff / DAY_MILLIS + " days ago&3";
         }
     }
 
@@ -63,10 +63,10 @@ public class CommonUtil {
     public static String isUserOnline(UUID uuid){
         for(Player player : Sponge.getServer().getOnlinePlayers()){
             if(uuid.equals(player.getUniqueId())) {
-                return "&a";
+                return "&b";
             }
         }
-        return "&c";
+        return "&b";
     }
 
     public static boolean checkUserOnline(String name){
@@ -80,17 +80,17 @@ public class CommonUtil {
 
     public static String checkTicketServer(String server) {
         if (server.equalsIgnoreCase(Config.server)) {
-            return "&a" + server;
+            return "&b" + server;
         }
-        return "&c" + server;
+        return "&b" + server;
     }
 
     public static String getTicketStatusColour(ticketStatus ticketIDStatus){
         String ticketStatus = "";
-        if (ticketIDStatus == Open) ticketStatus = "&eOpen";
-        if (ticketIDStatus == Claimed) ticketStatus = "&eClaimed";
-        if (ticketIDStatus == Held) ticketStatus = "&eHeld";
-        if (ticketIDStatus == Closed) ticketStatus = "&cClosed";
+        if (ticketIDStatus == Open) ticketStatus = "&bOpen";
+        if (ticketIDStatus == Claimed) ticketStatus = "&bClaimed";
+        if (ticketIDStatus == Held) ticketStatus = "&bHeld";
+        if (ticketIDStatus == Closed) ticketStatus = "&bClosed";
 
         return ticketStatus;
     }

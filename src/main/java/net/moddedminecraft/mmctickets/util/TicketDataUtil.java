@@ -6,120 +6,143 @@ import java.util.UUID;
 
 public class TicketDataUtil {
 
-    protected String playerUUID, world, staffUUID, comment, message, server;
-    protected int ticketID, x, y, z, notified;
-    protected Double yaw, pitch;
-    protected long timestamp;
-    protected ticketStatus status;
+  protected String playerUUID, world, staffUUID, comment, message, server;
+  protected int ticketID, x, y, z, notified;
+  protected Double yaw, pitch;
+  protected long timestamp;
+  protected ticketStatus status;
+  protected String discordMessage;
 
+  public TicketDataUtil(
+      int ticketID,
+      String playerUUID,
+      String staffUUID,
+      String comment,
+      long timestamp,
+      String world,
+      int x,
+      int y,
+      int z,
+      Double yaw,
+      Double pitch,
+      String message,
+      ticketStatus status,
+      int notified,
+      String server) {
+    this.ticketID = ticketID;
+    this.playerUUID = playerUUID;
+    this.staffUUID = staffUUID;
+    this.comment = comment;
+    this.timestamp = timestamp;
+    this.world = world;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.yaw = yaw;
+    this.pitch = pitch;
+    this.message = message;
+    this.status = status;
+    this.notified = notified;
+    this.server = server;
+  }
 
-    public TicketDataUtil(int ticketID, String playerUUID, String staffUUID, String comment, long timestamp, String world, int x, int y, int z, Double yaw, Double pitch, String message, ticketStatus status, int notified, String server) {
-        this.ticketID = ticketID;
-        this.playerUUID = playerUUID;
-        this.staffUUID = staffUUID;
-        this.comment = comment;
-        this.timestamp = timestamp;
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.yaw = yaw;
-        this.pitch = pitch;
-        this.message = message;
-        this.status = status;
-        this.notified = notified;
-        this.server = server;
-    }
+  public String getDiscordMessage() {
+    return discordMessage;
+  }
 
-    public int getTicketID() {
-        return ticketID;
-    }
+  public void setDiscordMessage(String discordMessage) {
+    this.discordMessage = discordMessage;
+  }
 
-    public UUID getPlayerUUID() {
-        return UUID.fromString(playerUUID);
-    }
+  public int getTicketID() {
+    return ticketID;
+  }
 
-    public UUID getStaffUUID() {
-        return UUID.fromString(staffUUID);
-    }
+  public UUID getPlayerUUID() {
+    return UUID.fromString(playerUUID);
+  }
 
-    public String getOldPlayer() {
-        return playerUUID;
-    }
+  public UUID getStaffUUID() {
+    return UUID.fromString(staffUUID);
+  }
 
-    public String getOldStaffname() {
-        return staffUUID;
-    }
+  public String getOldPlayer() {
+    return playerUUID;
+  }
 
-    public String getComment() {
-        return comment.replaceAll("(\\[)(.*)(\\])", "$2");
-    }
+  public String getOldStaffname() {
+    return staffUUID;
+  }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
+  public String getComment() {
+    return comment.replaceAll("(\\[)(.*)(\\])", "$2");
+  }
 
-    public String getWorld() {
-        return world;
-    }
+  public long getTimestamp() {
+    return timestamp;
+  }
 
-    public int getX() {
-        return x;
-    }
+  public String getWorld() {
+    return world;
+  }
 
-    public int getY() {
-        return y;
-    }
+  public int getX() {
+    return x;
+  }
 
-    public int getZ() {
-        return z;
-    }
+  public int getY() {
+    return y;
+  }
 
-    public Double getYaw() {
-        return yaw;
-    }
+  public int getZ() {
+    return z;
+  }
 
-    public Double getPitch() {
-        return pitch;
-    }
+  public Double getYaw() {
+    return yaw;
+  }
 
-    public String getMessage() {
-        return message.replaceAll("(\\[)(.*)(\\])", "$2");
-    }
+  public Double getPitch() {
+    return pitch;
+  }
 
-    public ticketStatus getStatus() {
-        return status;
-    }
+  public String getMessage() {
+    return message.replaceAll("(\\[)(.*)(\\])", "$2");
+  }
 
-    public int getNotified() {
-        return notified;
-    }
+  public ticketStatus getStatus() {
+    return status;
+  }
 
-    public void setStatus(ticketStatus status) {
-        this.status = status;
-    }
+  public int getNotified() {
+    return notified;
+  }
 
-    public void setNotified(int notified) {
-        this.notified = notified;
-    }
+  public void setStatus(ticketStatus status) {
+    this.status = status;
+  }
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
+  public void setNotified(int notified) {
+    this.notified = notified;
+  }
 
-    public void setStaffUUID(String uuid) {
-        this.staffUUID = uuid;
-    }
+  public void setComment(String comment) {
+    this.comment = comment;
+  }
 
-    public void setPlayerUUID(UUID uuid) {
-        this.playerUUID = String.valueOf(uuid);
-    }
+  public void setStaffUUID(String uuid) {
+    this.staffUUID = uuid;
+  }
 
-    public String getServer() {
-        return server;
-    }
+  public void setPlayerUUID(UUID uuid) {
+    this.playerUUID = String.valueOf(uuid);
+  }
 
-    public void setServer(String server) {
-        this.server = server;
-    }
+  public String getServer() {
+    return server;
+  }
+
+  public void setServer(String server) {
+    this.server = server;
+  }
 }

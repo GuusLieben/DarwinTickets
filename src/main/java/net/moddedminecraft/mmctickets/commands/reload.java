@@ -33,7 +33,7 @@ public class reload implements CommandExecutor {
             e.printStackTrace();
             throw new CommandException(Messages.getErrorGen("Unable to load data."));
         }
-        src.sendMessage(plugin.fromLegacy("&eTicket and Player data reloaded."));
+        src.sendMessage(plugin.fromLegacy("&bTicket and Player data reloaded."));
         return CommandResult.success();
     }
 }
