@@ -1,8 +1,7 @@
 package net.moddedminecraft.mmctickets.commands;
 
 import com.flowpowered.math.vector.Vector3d;
-import com.intellectualcrafters.plot.object.Plot;
-import com.intellectualcrafters.plot.object.PlotPlayer;
+import com.flowpowered.math.vector.Vector3i;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static net.moddedminecraft.mmctickets.data.ticketStatus.*;
 
