@@ -1,12 +1,14 @@
 package net.moddedminecraft.mmctickets.commands;
 
-import com.magitechserver.magibridge.MagiBridge;
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import net.dv8tion.jda.core.EmbedBuilder;
+
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
@@ -15,6 +17,9 @@ import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
 import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
 import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -22,6 +27,8 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 
 public class claim implements CommandExecutor {
 
@@ -83,31 +90,14 @@ public class claim implements CommandExecutor {
 					CommonUtil.notifyOnlineStaff(
 							Messages.getTicketClaim(src.getName(), ticket.getTicketID()));
 
-					EmbedBuilder embedBuilder = new EmbedBuilder();
-					embedBuilder.setColor(Color.GREEN);
-					embedBuilder.setTitle("Submission claimed");
-					embedBuilder.addField(
-							"Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-							"ID : #"
-									+ ticketID
-									+ "\nPlot : "
-									+ ticket.getMessage()
-									+ "\nClaimed by : "
-									+ src.getName(),
-							false);
-					embedBuilder.setThumbnail(
-							"https://webstockreview.net/images/green-clipart-magnifying-glass.png");
-					MagiBridge.jda
-							.getTextChannelById("525424284731047946")
-							.getMessageById(ticket.getDiscordMessage())
-							.queue(
-									msg -> {
-										msg.editMessage(embedBuilder.build()).queue();
-									});
-					//          MagiBridge.jda
-					//              .getTextChannelById("525424284731047946")
-					//              .sendMessage(embedBuilder.build())
-					//              .queue();
+					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+					Plot plot = Plot.getPlot(location);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.CLAIMED, plot);
+
+					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.build.other true");
+					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.destroy.other true");
+					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.interact.other true");
+					src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.AQUA, "Activated reviewer plot bypass, note that you will have to relog for this bypass to take effect"));
 
 					return CommandResult.success();
 				}

@@ -2,15 +2,16 @@ package net.moddedminecraft.mmctickets.commands;
 
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
-import com.magitechserver.magibridge.MagiBridge;
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.requests.restaction.MessageAction;
+
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -149,23 +150,12 @@ public class open implements CommandExecutor {
           if (Config.soundNotification) {
             CommonUtil.notifyOnlineStaffSound();
           }
-          EmbedBuilder embedBuilder = new EmbedBuilder();
-          embedBuilder.setColor(Color.YELLOW);
-          embedBuilder.setTitle("New submission");
-          embedBuilder.addField(
-              "Submitted by : " + player.getName(),
-              "ID assigned : " + ticketID + "\nPlot : " + message,
-              false);
-          embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/created.png");
-          MagiBridge.jda
-              .getTextChannelById("525424284731047946")
-              .sendMessage(embedBuilder.build())
-              .queue(
-                  msg -> {
-                    plugin.getLogger().warn("Ticket opened, Discord ID assigned : " + msg.getId());
-                    ticketData.setDiscordMessage(msg.getId());
-                    plugin.getDataStore().addTicketData(ticketData);
-                  });
+
+          DiscordUtil.sendToChannel(Color.YELLOW, player.getName(), null, ticketData, DiscordTicketStatus.NEW, plot, (msg -> {
+            plugin.getLogger().warn("Ticket opened, Discord ID assigned : " + msg.getId());
+            ticketData.setDiscordMessage(msg.getId());
+            plugin.getDataStore().addTicketData(ticketData);
+          }));
         } catch (Exception e) {
           player.sendMessage(Messages.getErrorGen("Data was not saved correctly."));
           e.printStackTrace();

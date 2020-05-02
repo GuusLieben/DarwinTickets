@@ -163,7 +163,7 @@ public class read implements CommandExecutor {
                             }
                             ticketStatus = CommonUtil.getTicketStatusColour(ticket.getStatus());
                             String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
-                            Optional<World> worldOptional = Sponge.getServer().getWorld(ticket.getWorld());
+                            Optional<World> worldOptional = Sponge.getServer().loadWorld(ticket.getWorld());
 
                             Text.Builder action = Text.builder();
 
@@ -474,9 +474,7 @@ public class read implements CommandExecutor {
             Player player = (Player) consumer;
 
             Location<World> location = new Location<>(world, x, y, z);
-            Vector3i chunkPosition = location.getChunkPosition();
-
-            if (!world.isLoaded()) world.loadChunk(chunkPosition, true);
+            if (!world.isLoaded()) Sponge.getServer().loadWorld(world.getUniqueId());
 
             Vector3d playerRotation = new Vector3d(pitch, yaw, 0);
             player.setLocationAndRotation(location, playerRotation);

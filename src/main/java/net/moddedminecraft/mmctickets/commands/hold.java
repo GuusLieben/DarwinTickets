@@ -1,5 +1,7 @@
 package net.moddedminecraft.mmctickets.commands;
 
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
 import com.magitechserver.magibridge.MagiBridge;
 import java.awt.Color;
 import java.text.MessageFormat;
@@ -15,6 +17,9 @@ import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
 import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
 import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -79,25 +84,10 @@ public class hold implements CommandExecutor {
 								Messages.getTicketHoldUser(ticket.getTicketID(), src.getName()));
 					}
 
-					EmbedBuilder embedBuilder = new EmbedBuilder();
-					embedBuilder.setColor(Color.PINK);
-					embedBuilder.setTitle("Submission on hold");
-					embedBuilder.addField(
-							"Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-							MessageFormat.format(
-									"ID : #{0}\nPlot : {1}\nClosed by : {2}\nScore : {3}\n",
-									ticketID,
-									ticket.getMessage(),
-									src.getName(),
-									ticket.getComment().length() == 0 ? "None" : ticket.getComment()),
-							false);
-					embedBuilder.setThumbnail(
-							"https://icon-library.net/images/stop-sign-icon-png/stop-sign-icon-png-8.jpg");
+					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+					Plot plot = Plot.getPlot(location);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.PINK, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.HOLD, plot);
 
-					MagiBridge.jda
-							.getTextChannelById("525424284731047946")
-							.getMessageById(ticket.getDiscordMessage())
-							.queue(msg -> msg.editMessage(embedBuilder.build()).queue());
 					return CommandResult.success();
 				}
 			}

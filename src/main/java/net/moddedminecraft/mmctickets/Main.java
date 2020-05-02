@@ -39,6 +39,7 @@ import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
 import net.moddedminecraft.mmctickets.database.DataStoreManager;
 import net.moddedminecraft.mmctickets.database.IDataStore;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.UpdateChecker;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
@@ -89,7 +90,7 @@ public class Main {
 	@Listener
 	public void Init ( GameInitializationEvent event ) throws IOException, ObjectMappingException {
 		Sponge.getEventManager().registerListeners(this, new EventListener(this));
-
+		DiscordUtil.setPlugin(this);
 		TypeSerializers.getDefaultSerializers()
 				.registerType(TypeToken.of(TicketData.class), new TicketSerializer());
 		TypeSerializers.getDefaultSerializers()

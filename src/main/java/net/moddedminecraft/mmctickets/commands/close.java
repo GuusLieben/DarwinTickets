@@ -1,13 +1,17 @@
 package net.moddedminecraft.mmctickets.commands;
 
-import com.magitechserver.magibridge.MagiBridge;
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
+
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
-import org.apache.commons.lang3.time.DateUtils;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -15,14 +19,10 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 
 import java.awt.*;
-import java.sql.Date;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -115,35 +115,15 @@ public class close implements CommandExecutor {
               rank = "Unknown";
           }
 
-          if (rejected.isPresent()) {
-            embedBuilder.setTitle("Submission rejected");
-          } else {
-            embedBuilder.setTitle("Submission approved");
-          }
+          String playerName = CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID());
+          Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+          Plot plot = Plot.getPlot(location);
 
-          embedBuilder.addField(
-              "Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-              MessageFormat.format(
-                      "ID : #{0}\nPlot : {1}\nClosed by : {2}\nComments : {3}\nTime closed : {4}",
-                      ticketID,
-                      ticket.getMessage(),
-                      src.getName(),
-                      ticket.getComment().length() == 0 ? "None" : ticket.getComment(),
-                      LocalDateTime.now().toString())
-                  + (rejected.isPresent() ? "" : "\nPromoted to : " + rank),
-              false);
           if (rejected.isPresent()) {
-            embedBuilder.setColor(Color.RED);
-            embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/rejected.png");
+            DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.RED, playerName, src, ticket, DiscordTicketStatus.REJECTED, plot);
           } else {
-            embedBuilder.setColor(Color.GREEN);
-            embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/approved.png");
+            DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, playerName, src, ticket, DiscordTicketStatus.APPROVED, plot);
           }
-
-          MagiBridge.jda
-              .getTextChannelById("525424284731047946")
-              .getMessageById(ticket.getDiscordMessage())
-              .queue(msg -> msg.editMessage(embedBuilder.build()).queue());
 
           try {
             plugin.getDataStore().updateTicketData(ticket);
@@ -151,6 +131,11 @@ public class close implements CommandExecutor {
             src.sendMessage(Messages.getErrorGen("Unable to close ticket"));
             e.printStackTrace();
           }
+
+          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.build.other");
+          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.destroy.other");
+          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.interact.other");
+          src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.AQUA, "Deactivated reviewer plot bypass."));
           return CommandResult.success();
         }
       }
