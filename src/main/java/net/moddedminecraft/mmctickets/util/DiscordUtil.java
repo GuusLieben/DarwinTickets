@@ -56,13 +56,20 @@ public class DiscordUtil {
     }
 
     private static MessageEmbed getEmbed(Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
+        final List<TicketData> tickets =
+                new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
+        int ticketNum =
+                (int)
+                        tickets.stream().filter(t -> t.getPlayerUUID().equals(ticketData.getPlayerUUID())
+                                && t.getMessage().equals(ticketData.getMessage()))
+                                .count();
         String comment = ticketData.getComment() == null || ticketData.getComment().equals("") ? "None" : ticketData.getComment();
         EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setTitle(ticketStatus.title)
                 .setDescription("Submitted by : " + submitter)
                 .setColor(color)
                 .setTimestamp(OffsetDateTime.now())
-                .setFooter("ID #" + ticketData.getTicketID(), null)
+                .setFooter("ID #" + ticketData.getTicketID() + " | Submission #" + ticketNum, null)
                 .setThumbnail(ticketStatus.imageUrl)
                 .addField("World", plot.getWorldName(), true)
                 .addField("Plot", plot.getId().toString(), true)
