@@ -1,7 +1,7 @@
 package net.moddedminecraft.mmctickets.commands;
 
 import com.flowpowered.math.vector.Vector3d;
-import com.flowpowered.math.vector.Vector3i;
+
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static net.moddedminecraft.mmctickets.data.ticketStatus.*;
@@ -436,9 +437,12 @@ public class read implements CommandExecutor {
                             contents.add(
                                     plugin.fromLegacy("&bWhen: " + CommonUtil.getTimeAgo(ticket.getTimestamp())));
 
+                            AtomicBoolean isOnline = new AtomicBoolean(false);
+                            Sponge.getServer().getPlayer(ticket.getPlayerUUID()).ifPresent(p -> isOnline.set(p.isOnline()));
+
                             contents.add(
                                     plugin.fromLegacy(
-                                            "&bServer: " + CommonUtil.checkTicketServer(ticket.getServer())));
+                                            "&bPlayer online? " + (isOnline.get() ? "&cYes" : "&bNo")));
                             if (!ticket
                                     .getPlayerUUID()
                                     .toString()
