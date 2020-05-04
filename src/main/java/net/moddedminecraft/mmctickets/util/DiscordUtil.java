@@ -69,7 +69,7 @@ public class DiscordUtil {
                 .setDescription("Submitted by : " + submitter)
                 .setColor(color)
                 .setTimestamp(OffsetDateTime.now())
-                .setFooter("ID #" + ticketData.getTicketID() + " | Submission #" + ticketNum, null)
+                .setFooter("ID #" + ticketData.getTicketID() + " | Submission #" + (ticketNum+1), null)
                 .setThumbnail(ticketStatus.imageUrl)
                 .addField("World", plot.getWorldName(), true)
                 .addField("Plot", plot.getId().toString(), true)
