@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import net.dv8tion.jda.core.EmbedBuilder;
+
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
@@ -93,7 +94,7 @@ public class unclaim implements CommandExecutor {
 
 					MagiBridge.jda
 							.getTextChannelById("525424284731047946")
-							.getMessageById(ticket.getDiscordMessage())
+							.retrieveMessageById(ticket.getDiscordMessage())
 							.queue(msg -> msg.editMessage(embedBuilder.build()).queue());
 					return CommandResult.success();
 				}

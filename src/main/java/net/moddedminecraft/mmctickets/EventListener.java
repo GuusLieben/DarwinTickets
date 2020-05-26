@@ -1,7 +1,6 @@
 package net.moddedminecraft.mmctickets;
 
 import com.magitechserver.magibridge.MagiBridge;
-import com.magitechserver.magibridge.api.DiscordEvent;
 import java.awt.Color;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -10,8 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.MessageBuilder;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.PlayerData;
@@ -24,7 +26,9 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 
-public class EventListener {
+import javax.annotation.Nonnull;
+
+public class EventListener extends ListenerAdapter {
 
 	private Main plugin;
 
@@ -144,19 +148,20 @@ public class EventListener {
 		}
 	}
 
-	@Listener
-	public void onDiscordMessage ( DiscordEvent.MessageEvent event ) {
+	@Override
+	public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+
 		if (event.getChannel().getId().equals("525424009978970112")
-				&& event.getUser().getId().equals("151771899985264640")
-				&& event.getRawMessage().startsWith("[#]")) {
-			String message = event.getRawMessage().replace("[#]", "");
+				&& event.getAuthor().getId().equals("151771899985264640")
+				&& event.getMessage().getContentRaw().startsWith("[#]")) {
+			String message = event.getMessage().getContentRaw().replace("[#]", "");
 			MagiBridge.jda
 					.getTextChannelById("466934478519140372")
 					.sendMessage(message + "\n\n@everyone")
 					.queue();
 		} else if (event.getChannel().getId().equals("525424273318215681")) {
-			if (event.getRawMessage().startsWith(".check")) {
-				String command = event.getRawMessage();
+			if (event.getMessage().getContentRaw().startsWith(".check")) {
+				String command = event.getMessage().getContentRaw();
 				if (command.split(" ").length == 2) {
 					final List<TicketData> tickets =
 							new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
@@ -264,5 +269,6 @@ public class EventListener {
 				}
 			}
 		}
+
 	}
 }

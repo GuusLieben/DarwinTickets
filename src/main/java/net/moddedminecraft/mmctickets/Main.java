@@ -2,6 +2,8 @@ package net.moddedminecraft.mmctickets;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.magitechserver.magibridge.MagiBridge;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -89,7 +91,6 @@ public class Main {
 
 	@Listener
 	public void Init ( GameInitializationEvent event ) throws IOException, ObjectMappingException {
-		Sponge.getEventManager().registerListeners(this, new EventListener(this));
 		DiscordUtil.setPlugin(this);
 		TypeSerializers.getDefaultSerializers()
 				.registerType(TypeToken.of(TicketData.class), new TicketSerializer());
@@ -118,6 +119,9 @@ public class Main {
 		getLogger().info("Notifications loaded: " + getDataStore().getNotifications().size());
 		getLogger().info("PlayerData loaded: " + getDataStore().getPlayerData().size());
 
+		EventListener el = new EventListener(this);
+		Sponge.getEventManager().registerListeners(this, el);
+		MagiBridge.jda.addEventListener(el);
 		this.waitTimer = new ArrayList<String>();
 
 		updatechecker =
