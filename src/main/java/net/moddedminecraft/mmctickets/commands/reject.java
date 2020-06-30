@@ -55,29 +55,6 @@ public class reject implements CommandExecutor {
 									"[] ",
 									TextColors.AQUA,
 									"Rejected and closed ticket #" + ticket.getTicketID()));
-//          EmbedBuilder embedBuilder = new EmbedBuilder();
-//          embedBuilder.setColor(Color.RED);
-//          embedBuilder.setTitle("Submission rejected");
-//          embedBuilder.addField(
-//              "Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-//              "ID : #"
-//                  + ticket.getTicketID()
-//                  + "\nRejected by : "
-//                  + src.getName()
-//                  + "\nSee close message for this ticket for more details",
-//              false);
-//          embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/rejected.png");
-//          MagiBridge.jda
-//              .getTextChannelById("525424284731047946")
-//              .getMessageById(ticket.getDiscordMessage())
-//              .queue(
-//                  msg -> {
-//                    msg.editMessage(embedBuilder.build()).queue();
-//                  });
-					//          MagiBridge.jda
-					//              .getTextChannelById("525424284731047946")
-					//              .sendMessage(embedBuilder.build())
-					//              .queue();
 				}
 			}
 		}

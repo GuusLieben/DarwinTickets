@@ -1,5 +1,6 @@
 package net.moddedminecraft.mmctickets.util;
 
+import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
 
 import java.util.UUID;
@@ -13,6 +14,7 @@ public class TicketDataUtil {
   protected ticketStatus status;
   protected String discordMessage;
   private String rank;
+  protected String additionalReviewers;
 
   public String getRank() {
     return rank;
@@ -23,21 +25,22 @@ public class TicketDataUtil {
   }
 
   public TicketDataUtil(
-      int ticketID,
-      String playerUUID,
-      String staffUUID,
-      String comment,
-      long timestamp,
-      String world,
-      int x,
-      int y,
-      int z,
-      Double yaw,
-      Double pitch,
-      String message,
-      ticketStatus status,
-      int notified,
-      String server) {
+          int ticketID,
+          String playerUUID,
+          String staffUUID,
+          String comment,
+          long timestamp,
+          String world,
+          int x,
+          int y,
+          int z,
+          Double yaw,
+          Double pitch,
+          String message,
+          ticketStatus status,
+          int notified,
+          String server,
+          String additionalReviewers) {
     this.ticketID = ticketID;
     this.playerUUID = playerUUID;
     this.staffUUID = staffUUID;
@@ -53,6 +56,9 @@ public class TicketDataUtil {
     this.status = status;
     this.notified = notified;
     this.server = server;
+    if (additionalReviewers == null || "".equals(additionalReviewers))
+      this.additionalReviewers = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+    else this.additionalReviewers = additionalReviewers;
   }
 
   public String getDiscordMessage() {
@@ -149,6 +155,24 @@ public class TicketDataUtil {
 
   public String getServer() {
     return server;
+  }
+
+  public void addAdditionalReviewer(String reviewer) {
+    this.additionalReviewers += "," + reviewer;
+  }
+
+  public String getAdditionalStaff() {
+    if (additionalReviewers == null || "".equals(additionalReviewers))
+      return CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+
+    return additionalReviewers;
+  }
+
+  public String[] getAdditionalReviewers() {
+    if (additionalReviewers == null || "".equals(additionalReviewers))
+      return new String[]{CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID))};
+
+    return additionalReviewers.split(",");
   }
 
   public void setServer(String server) {

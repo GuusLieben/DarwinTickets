@@ -8,7 +8,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.moddedminecraft.mmctickets.Main;
+import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
+import net.moddedminecraft.mmctickets.data.ticketStatus;
 
 import org.spongepowered.api.command.CommandSource;
 
@@ -25,6 +27,19 @@ public class DiscordUtil {
 
     public static void setPlugin(Main plugin) {
         DiscordUtil.plugin = plugin;
+    }
+
+    public static DiscordTicketStatus convertStatus(ticketStatus status) {
+        switch (status) {
+            case CLOSED:
+                return DiscordTicketStatus.REJECTED;
+            case OPEN:
+                return DiscordTicketStatus.NEW;
+            case HELD:
+                return DiscordTicketStatus.HOLD;
+            default:
+                return DiscordTicketStatus.valueOf(status.toString().toUpperCase());
+        }
     }
 
     public enum DiscordTicketStatus {
@@ -58,7 +73,17 @@ public class DiscordUtil {
     private static MessageEmbed getEmbed(Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
         final List<TicketData> tickets = new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
         int ticketNum = (int) tickets.stream().filter(t -> t.getPlayerUUID().equals(ticketData.getPlayerUUID()) && t.getMessage().equals(ticketData.getMessage())).count();
-        String comment = ticketData.getComment() == null || ticketData.getComment().equals("") ? "None" : ticketData.getComment();
+
+        List<TicketComment> comments = plugin.getDataStore().getComments(ticketData.getMessage(), ticketData.getPlayerUUID());
+        StringBuilder builder = new StringBuilder();
+        for (TicketComment comment : comments) {
+            if (builder.length() > 0) builder.append("\n");
+            builder.append("[").append(comment.getSource()).append(" on #").append(comment.getTicketId()).append("]: ").append(comment.getComment());
+        }
+
+        String comment = builder.toString();
+        if (comments.isEmpty()) comment = "None";
+
         EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setTitle(ticketStatus.title)
                 .setDescription("Submitted by : " + submitter)
@@ -71,7 +96,8 @@ public class DiscordUtil {
                 .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
                 .addField("Comment(s)", comment, true);
 
-        if (handler != null) embedBuilder.addField("Handled by", handler.getName(), false);
+        if (handler != null)
+            embedBuilder.addField("Handled by", ticketData.getAdditionalStaff().replaceAll(",", ", "), false);
 
         return embedBuilder.build();
     }

@@ -4,11 +4,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.magitechserver.magibridge.MagiBridge;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import net.moddedminecraft.mmctickets.commands.AddStaff;
 import net.moddedminecraft.mmctickets.commands.assign;
 import net.moddedminecraft.mmctickets.commands.ban;
 import net.moddedminecraft.mmctickets.commands.claim;
@@ -35,16 +31,11 @@ import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.PlayerData.PlayerDataSerializer;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.TicketData.TicketSerializer;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
 import net.moddedminecraft.mmctickets.database.DataStoreManager;
 import net.moddedminecraft.mmctickets.database.IDataStore;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
-import net.moddedminecraft.mmctickets.util.UpdateChecker;
-import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
+
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandManager;
@@ -60,6 +51,19 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
 
 @Plugin (
 		id = "mmctickets",
@@ -87,7 +91,11 @@ public class Main {
 	private ArrayList<String> waitTimer;
 	private DataStoreManager dataStoreManager;
 
-	public UpdateChecker updatechecker;
+	public static Main INSTANCE;
+
+	public Main() {
+		Main.INSTANCE = this;
+	}
 
 	@Listener
 	public void Init ( GameInitializationEvent event ) throws IOException, ObjectMappingException {
@@ -124,10 +132,10 @@ public class Main {
 		MagiBridge.jda.addEventListener(el);
 		this.waitTimer = new ArrayList<String>();
 
-		updatechecker =
-				new UpdateChecker(
-						this, Sponge.getPluginManager().getPlugin("mmctickets").get().getVersion().get());
-		updatechecker.startUpdateCheck();
+//		updatechecker =
+//				new UpdateChecker(
+//						this, Sponge.getPluginManager().getPlugin("mmctickets").get().getVersion().get());
+//		updatechecker.startUpdateCheck();
 
 		// start ticket nag timer
 		nagTimer();
@@ -213,6 +221,14 @@ public class Main {
 						.executor(new open(this))
 						.arguments(GenericArguments.remainingJoinedStrings(Text.of("message")))
 						.permission(Permissions.COMMAND_TICKET_OPEN)
+						.build();
+
+		CommandSpec addStaff =
+				CommandSpec.builder()
+						.description(Text.of("Adds additional reviewers to a ticket"))
+						.executor(new AddStaff(this))
+						.arguments(GenericArguments.integer(Text.of("ticketID")), GenericArguments.user(Text.of("player")))
+						.permission(Permissions.COMMAND_ADD_STAFF)
 						.build();
 
 		// /ticket ban (username)
@@ -339,6 +355,7 @@ public class Main {
 						.child(ticketComment, "comment")
 						.child(ticketTeleport, "teleport", "tp")
 						.child(ticketReject, "reject")
+						.child(addStaff, "add")
 						.build();
 
 		cmdManager.register(this, ticketOpen, "modreq");
@@ -368,10 +385,10 @@ public class Main {
 									int openTickets = 0;
 									int heldTickets = 0;
 									for (TicketData ticket : tickets) {
-										if (ticket.getStatus() == Open || ticket.getStatus() == Claimed) {
+										if (ticket.getStatus() == OPEN || ticket.getStatus() == CLAIMED) {
 											openTickets++;
 										}
-										if (ticket.getStatus() == Held) {
+										if (ticket.getStatus() == HELD) {
 											heldTickets++;
 										}
 									}

@@ -1,5 +1,7 @@
 package net.moddedminecraft.mmctickets.commands;
 
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
 import com.magitechserver.magibridge.MagiBridge;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -12,16 +14,24 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
+import org.spongepowered.api.command.source.ConsoleSource;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
 
@@ -50,22 +60,24 @@ public class unclaim implements CommandExecutor {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
 					if (!ticket.getStaffUUID().equals(uuid)
-							&& ticket.getStatus() == Claimed
-							&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
+							&& ticket.getStatus() == CLAIMED
+							&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)
+                            && !(src instanceof ConsoleSource)
+                    ) {
 						throw new CommandException(
 								Messages.getErrorTicketUnclaim(
 										ticket.getTicketID(),
 										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					if (ticket.getStatus() == Open) {
+					if (ticket.getStatus() == OPEN) {
 						throw new CommandException(Messages.getTicketNotClaimed(ticket.getTicketID()));
 					}
-					if (ticket.getStatus() == Closed || ticket.getStatus() == Held) {
+					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED || ticket.getStatus() == HELD) {
 						throw new CommandException(Messages.getTicketNotOpen(ticketID));
 					}
 
 					ticket.setStaffUUID(UUID.fromString("00000000-0000-0000-0000-000000000000").toString());
-					ticket.setStatus(Open);
+					ticket.setStatus(OPEN);
 
 					try {
 						plugin.getDataStore().updateTicketData(ticket);
@@ -83,19 +95,9 @@ public class unclaim implements CommandExecutor {
 
 					CommonUtil.notifyOnlineStaff(
 							Messages.getTicketUnclaim(src.getName(), ticket.getTicketID()));
-					EmbedBuilder embedBuilder = new EmbedBuilder();
-					embedBuilder.setColor(Color.YELLOW);
-					embedBuilder.setTitle("New submission");
-					embedBuilder.addField(
-							"Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-							"ID assigned : " + ticketID + "\nPlot : " + ticket.getMessage(),
-							false);
-					embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/created.png");
-
-					MagiBridge.jda
-							.getTextChannelById("525424284731047946")
-							.retrieveMessageById(ticket.getDiscordMessage())
-							.queue(msg -> msg.editMessage(embedBuilder.build()).queue());
+					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+					Plot plot = Plot.getPlot(location);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), ticket.getStatus().getAssociatedColor(), CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.NEW, plot);
 					return CommandResult.success();
 				}
 			}

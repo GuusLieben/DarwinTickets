@@ -2,9 +2,8 @@ package net.moddedminecraft.mmctickets.commands;
 
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
-import com.magitechserver.magibridge.MagiBridge;
+
 import java.awt.Color;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -12,9 +11,13 @@ import java.util.UUID;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
@@ -52,19 +55,19 @@ public class hold implements CommandExecutor {
 		} else {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
-					if (ticket.getStatus() == Closed) {
+					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED) {
 						src.sendMessage(Messages.getErrorTicketAlreadyClosed());
 					}
-					if (ticket.getStatus() == Held) {
+					if (ticket.getStatus() == HELD) {
 						src.sendMessage(Messages.getErrorTicketlreadyHold());
 					}
-					if (ticket.getStatus() == Claimed && !ticket.getStaffUUID().equals(uuid)) {
+					if (ticket.getStatus() == CLAIMED && !ticket.getStaffUUID().equals(uuid)) {
 						src.sendMessage(
 								Messages.getErrorTicketClaim(
 										ticket.getTicketID(),
 										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					ticket.setStatus(Held);
+					ticket.setStatus(HELD);
 					ticket.setStaffUUID(UUID.fromString("00000000-0000-0000-0000-000000000000").toString());
 
 					try {

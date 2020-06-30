@@ -7,9 +7,13 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -52,9 +56,9 @@ public class readSelf implements CommandExecutor {
 					String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
 					Text.Builder send = Text.builder();
 					String status = "";
-					if (ticket.getStatus() == Open) status = "&bOpen &b- ";
-					if (ticket.getStatus() == Held) status = "&3Held &b- ";
-					if (ticket.getStatus() == Closed) status = "&bClosed &b- ";
+					if (ticket.getStatus() == OPEN) status = "&bOpen &b- ";
+					if (ticket.getStatus() == HELD) status = "&3Held &b- ";
+					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED) status = "&bClosed &b- ";
 					send.append(plugin.fromLegacy(status + "&3#" + ticket.getTicketID() + " " + CommonUtil.getTimeAgo(ticket.getTimestamp()) + " by " + online + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " &3on " + CommonUtil.checkTicketServer(ticket.getServer()) + " &3- &7" + CommonUtil.shortenMessage(ticket.getMessage())));
 					send.onClick(TextActions.runCommand("/ticket read " + ticket.getTicketID()));
 					send.onHover(TextActions.showText(plugin.fromLegacy("Click here to get more details for ticket #" + ticket.getTicketID())));

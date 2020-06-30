@@ -7,8 +7,12 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -38,13 +42,13 @@ public class assign implements CommandExecutor {
 		} else {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
-					if (ticket.getStatus() == Closed) {
+					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED) {
 						src.sendMessage(Messages.getErrorTicketAlreadyClosed());
 					}
-					if (ticket.getStatus() == Claimed && !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
+					if (ticket.getStatus() == CLAIMED && !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
 						throw new CommandException(Messages.getErrorTicketClaim(ticket.getTicketID(), CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					ticket.setStatus(Claimed);
+					ticket.setStatus(CLAIMED);
 					ticket.setStaffUUID(user.getUniqueId().toString());
 
 					try {

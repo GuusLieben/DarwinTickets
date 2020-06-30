@@ -5,7 +5,7 @@ import java.util.List;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -40,7 +40,7 @@ public class readHeld implements CommandExecutor {
 			PaginationService paginationService = Sponge.getServiceManager().provide(PaginationService.class).get();
 			List<Text> contents = new ArrayList<>();
 			for (TicketData ticket : tickets) {
-				if (ticket.getStatus() == Held) {
+				if (ticket.getStatus() == HELD) {
 					String online = CommonUtil.isUserOnline(ticket.getPlayerUUID());
 					Text.Builder send = Text.builder();
 					send.append(plugin.fromLegacy("&3#" + ticket.getTicketID() + " " + CommonUtil.getTimeAgo(ticket.getTimestamp()) + " by " + online + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " &3on " + CommonUtil.checkTicketServer(ticket.getServer()) + " &3- &7" + CommonUtil.shortenMessage(ticket.getMessage())));

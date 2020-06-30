@@ -24,7 +24,8 @@ public class TicketData extends TicketDataUtil {
 			String message,
 			ticketStatus status,
 			int notified,
-			String server ) {
+			String server,
+			String additionalReviewers) {
 		super(
 				ticketID,
 				playerUUID,
@@ -40,7 +41,8 @@ public class TicketData extends TicketDataUtil {
 				message,
 				status,
 				notified,
-				server);
+				server,
+				additionalReviewers);
 	}
 
 	public static class TicketSerializer implements TypeSerializer<TicketData> {
@@ -65,9 +67,10 @@ public class TicketData extends TicketDataUtil {
 							node.getNode("yaw").getDouble(),
 							node.getNode("pitch").getDouble(),
 							node.getNode("message").getString(),
-							ticketStatus.valueOf(node.getNode("status").getString()),
+							ticketStatus.valueOf(node.getNode("status").getString().toUpperCase()),
 							node.getNode("notified").getInt(),
-							node.getNode("server").getString());
+							node.getNode("server").getString(),
+							node.getNode("additional_staff").getString());
 			data.setDiscordMessage(node.getNode("discord").getString());
 			return data;
 		}
@@ -91,6 +94,7 @@ public class TicketData extends TicketDataUtil {
 			node.getNode("notified").setValue(ticket.notified);
 			node.getNode("server").setValue(ticket.server);
 			node.getNode("discord").setValue(ticket.discordMessage);
+			node.getNode("additional_staff").setValue(ticket.getAdditionalStaff());
 		}
 	}
 }

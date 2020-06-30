@@ -7,6 +7,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +16,7 @@ import java.util.UUID;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
 
@@ -55,14 +58,28 @@ public final class H2DataStore implements IDataStore {
 					+ " status VARCHAR(20) NOT NULL,"
 					+ " notified INTEGER NOT NULL,"
 					+ " server VARCHAR(100) NOT NULL,"
-					+ " discord VARCHAR(100) NOT NULL"
+					+ " discord VARCHAR(100) NOT NULL,"
+					+ " additional_staff VARCHAR(MAX)"
 					+ ");");
+
+			connection.createStatement().executeUpdate("ALTER TABLE " + Config.h2Prefix + "tickets ADD COLUMN IF NOT EXISTS additional_staff VARCHAR(MAX)");
 
 			connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS " + Config.h2Prefix + "playerdata ("
 					+ "uuid VARCHAR(36) NOT NULL PRIMARY KEY, "
 					+ "playername VARCHAR(36) NOT NULL, "
 					+ "banned INTEGER NOT NULL"
 					+ ");");
+
+			// comment, source, posted, plot, player
+			connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS " + Config.h2Prefix + "comments ("
+					+ " comment VARCHAR(MAX) NOT NULL,"
+					+ " source VARCHAR(100) NOT NULL,"
+					+ " posted TIMESTAMP NOT NULL,"
+					+ " plot VARCHAR(100) NOT NULL,"
+					+ " player VARCHAR(MAX) NOT NULL,"
+					+ " ticketid INTEGER NOT NULL"
+					+ ");"
+			);
 
 			getConnection().commit();
 		} catch (SQLException ex) {
@@ -92,9 +109,10 @@ public final class H2DataStore implements IDataStore {
 						rs.getDouble("yaw"),
 						rs.getDouble("pitch"),
 						rs.getString("message"),
-						ticketStatus.valueOf(rs.getString("status")),
+						ticketStatus.valueOf(rs.getString("status").toUpperCase()),
 						rs.getInt("notified"),
-						rs.getString("server")
+						rs.getString("server"),
+						rs.getString("additional_staff")
 				);
 				ticketData.setDiscordMessage(rs.getString("discord"));
 				ticketList.add(ticketData);
@@ -132,7 +150,7 @@ public final class H2DataStore implements IDataStore {
 		ArrayList<UUID> notifications = new ArrayList<>();
 		List<TicketData> ticketData = getTicketData();
 		for (TicketData ticket : ticketData) {
-			if (ticket.getNotified() == 0 && ticket.getStatus() == ticketStatus.Closed) {
+			if (ticket.getNotified() == 0 && ticket.getStatus() == ticketStatus.CLOSED) {
 				notifications.add(ticket.getPlayerUUID());
 			}
 		}
@@ -156,7 +174,7 @@ public final class H2DataStore implements IDataStore {
 	@Override
 	public boolean addTicketData ( TicketData ticketData ) {
 		try (Connection connection = getConnection()) {
-			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 			statement.setInt(1, ticketData.getTicketID());
 			statement.setString(2, ticketData.getPlayerUUID().toString());
 			statement.setString(3, ticketData.getStaffUUID().toString());
@@ -173,6 +191,7 @@ public final class H2DataStore implements IDataStore {
 			statement.setInt(14, ticketData.getNotified());
 			statement.setString(15, ticketData.getServer());
 			statement.setString(16, ticketData.getDiscordMessage());
+			statement.setString(17, ticketData.getAdditionalStaff());
 			return statement.executeUpdate() > 0;
 		} catch (SQLException ex) {
 			plugin.getLogger().error("H2: Error adding ticketdata", ex);
@@ -197,7 +216,7 @@ public final class H2DataStore implements IDataStore {
 	@Override
 	public boolean updateTicketData ( TicketData ticketData ) {
 		try (Connection connection = getConnection()) {
-			PreparedStatement statement = connection.prepareStatement("MERGE INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+			PreparedStatement statement = connection.prepareStatement("MERGE INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 			statement.setInt(1, ticketData.getTicketID());
 			statement.setString(2, ticketData.getPlayerUUID().toString());
 			statement.setString(3, ticketData.getStaffUUID().toString());
@@ -214,6 +233,7 @@ public final class H2DataStore implements IDataStore {
 			statement.setInt(14, ticketData.getNotified());
 			statement.setString(15, ticketData.getServer());
 			statement.setString(16, ticketData.getDiscordMessage());
+			statement.setString(17, ticketData.getAdditionalStaff());
 			return statement.executeUpdate() > 0;
 		} catch (SQLException ex) {
 			plugin.getLogger().error("H2: Error updating ticketdata", ex);
@@ -233,6 +253,48 @@ public final class H2DataStore implements IDataStore {
 			plugin.getLogger().error("H2: Error updating playerdata", ex);
 		}
 		return false;
+	}
+
+	@Override
+	public boolean addComment(TicketData ticket, String comment, String source) {
+		try (Connection connection = getConnection()) {
+			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "comments VALUES (?, ?, ?, ?, ?, ?);");
+			statement.setString(1, comment);
+			statement.setString(2, source);
+			statement.setTimestamp(3, Timestamp.from(Instant.now()));
+			statement.setString(4, ticket.getMessage());
+			statement.setString(5, ticket.getPlayerUUID().toString());
+			statement.setInt(6, ticket.getTicketID());
+			return statement.executeUpdate() > 0;
+		} catch (SQLException ex) {
+			plugin.getLogger().error("H2: Error adding ticket comment", ex);
+		}
+		return false;
+	}
+
+	@Override
+	public List<TicketComment> getComments(String plotMessage, UUID player) {
+		List<TicketComment> comments = new ArrayList<>();
+
+		try (Connection connection = getConnection()) {
+			PreparedStatement statement = connection.prepareStatement("SELECT comment, source, posted, ticketid FROM " + Config.h2Prefix + "comments WHERE plot = ? AND player = ?");
+			statement.setString(1, plotMessage);
+			statement.setString(2, player.toString());
+			ResultSet rs = statement.executeQuery();
+			while (rs.next()) {
+				TicketComment comment = new TicketComment(
+						rs.getString("source"),
+						rs.getTimestamp("posted"),
+						rs.getString("comment"),
+						rs.getInt("ticketid")
+				);
+					comments.add(comment);
+			}
+			return comments;
+		} catch (SQLException ex) {
+			plugin.getLogger().warn("H2: Couldn't read comments from H@ database.", ex);
+			return new ArrayList<>();
+		}
 	}
 
 	public boolean hasColumn ( String tableName, String columnName ) {

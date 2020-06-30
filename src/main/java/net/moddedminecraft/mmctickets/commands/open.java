@@ -22,15 +22,17 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
 
 public class open implements CommandExecutor {
 
@@ -73,7 +75,7 @@ public class open implements CommandExecutor {
       if (Config.server.isEmpty()) {
         throw new CommandException(Messages.getErrorGen("Server name inside config is not set"));
       }
-      if (plugin.getWaitTimer().contains(src.getName())) {
+      if (plugin != null && plugin.getWaitTimer() != null && src != null && plugin.getWaitTimer().contains(src.getName())) {
         throw new CommandException(Messages.getTicketTooFast(Config.delayTimer));
       }
       final List<TicketData> tickets =
@@ -87,13 +89,15 @@ public class open implements CommandExecutor {
           if (ticket.getTicketID() == ticketID) {
             ticketID++;
           }
-          if (ticket.getPlayerUUID().equals(uuid) && ticket.getStatus() != Closed) {
+          if (ticket.getPlayerUUID().equals(uuid) && ticket.getStatus() != CLOSED) {
             totalTickets++;
           }
           if (Config.preventDuplicates) {
             if (ticket.getMessage().equals(message)
-                && ticket.getStatus() != Closed
-                && ticket.getPlayerUUID().equals(uuid)) {
+                    && ticket.getStatus() != CLOSED
+                    && ticket.getStatus() != REJECTED
+                    && ticket.getStatus() != APPROVED
+                    && ticket.getPlayerUUID().equals(uuid)) {
               duplicate = true;
             }
           }
@@ -121,22 +125,23 @@ public class open implements CommandExecutor {
       if (plot != null) {
         try {
           TicketData ticketData =
-              new TicketData(
-                  ticketID,
-                  String.valueOf(uuid),
-                  UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
-                  "",
-                  System.currentTimeMillis() / 1000,
-                  player.getWorld().getName(),
-                  player.getLocation().getBlockX(),
-                  player.getLocation().getBlockY(),
-                  player.getLocation().getBlockZ(),
-                  player.getHeadRotation().getX(),
-                  player.getHeadRotation().getY(),
-                  message,
-                  Open,
-                  0,
-                  Config.server);
+                  new TicketData(
+                          ticketID,
+                          String.valueOf(uuid),
+                          UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
+                          "",
+                          System.currentTimeMillis() / 1000,
+                          player.getWorld().getName(),
+                          player.getLocation().getBlockX(),
+                          player.getLocation().getBlockY(),
+                          player.getLocation().getBlockZ(),
+                          player.getHeadRotation().getX(),
+                          player.getHeadRotation().getY(),
+                          message,
+                          OPEN,
+                          0,
+                          Config.server,
+                          player.getName());
 
           player.sendMessage(Messages.getTicketOpenUser(ticketID));
           if (Config.staffNotification) {
@@ -195,24 +200,25 @@ public class open implements CommandExecutor {
 
       try {
         plugin
-            .getDataStore()
-            .addTicketData(
-                new TicketData(
-                    ticketID,
-                    UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
-                    UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
-                    "",
-                    System.currentTimeMillis() / 1000,
-                    Sponge.getServer().getDefaultWorldName(),
-                    0,
-                    0,
-                    0,
-                    0.0,
-                    0.0,
-                    message,
-                    Open,
-                    0,
-                    Config.server));
+                .getDataStore()
+                .addTicketData(
+                        new TicketData(
+                                ticketID,
+                                UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
+                                UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
+                                "",
+                                System.currentTimeMillis() / 1000,
+                                Sponge.getServer().getDefaultWorldName(),
+                                0,
+                                0,
+                                0,
+                                0.0,
+                                0.0,
+                                message,
+                                OPEN,
+                                0,
+                                Config.server,
+                                "server"));
 
         src.sendMessage(Messages.getTicketOpenUser(ticketID));
         if (Config.staffNotification) {

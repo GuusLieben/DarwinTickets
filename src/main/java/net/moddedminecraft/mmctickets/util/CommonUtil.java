@@ -9,10 +9,10 @@ import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -88,10 +88,10 @@ public class CommonUtil {
 
 	public static String getTicketStatusColour ( ticketStatus ticketIDStatus ) {
 		String ticketStatus = "";
-		if (ticketIDStatus == Open) ticketStatus = "&bOpen";
-		if (ticketIDStatus == Claimed) ticketStatus = "&bClaimed";
-		if (ticketIDStatus == Held) ticketStatus = "&bHeld";
-		if (ticketIDStatus == Closed) ticketStatus = "&bClosed";
+		if (ticketIDStatus == OPEN) ticketStatus = "&bOpen";
+		if (ticketIDStatus == CLAIMED) ticketStatus = "&bClaimed";
+		if (ticketIDStatus == HELD) ticketStatus = "&bHeld";
+		if (ticketIDStatus == CLOSED) ticketStatus = "&bClosed";
 
 		return ticketStatus;
 	}

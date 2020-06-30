@@ -114,8 +114,8 @@ public class EventListener extends ListenerAdapter {
 			int openTickets = 0;
 			int heldTickets = 0;
 			for (TicketData ticket : tickets) {
-				if (ticket.getStatus() == ticketStatus.Open) openTickets++;
-				if (ticket.getStatus() == ticketStatus.Held) heldTickets++;
+				if (ticket.getStatus() == ticketStatus.OPEN) openTickets++;
+				if (ticket.getStatus() == ticketStatus.HELD) heldTickets++;
 			}
 			final int finalOpen = openTickets;
 			final int finalHeld = heldTickets;
@@ -140,11 +140,6 @@ public class EventListener extends ListenerAdapter {
 					.delay(3, TimeUnit.SECONDS)
 					.name("mmctickets-s-sendStaffNotifications")
 					.submit(this.plugin);
-		}
-
-		// Send update notification to players with permission
-		if (player.hasPermission(Permissions.NOTIFY)) {
-			plugin.updatechecker.startUpdateCheckPlayer(player);
 		}
 	}
 
@@ -233,7 +228,7 @@ public class EventListener extends ListenerAdapter {
 					EmbedBuilder embed = new EmbedBuilder();
 					AtomicInteger amount = new AtomicInteger();
 					tickets.stream()
-							.filter(t -> t.getStatus().equals(ticketStatus.Open))
+							.filter(t -> t.getStatus().equals(ticketStatus.OPEN))
 							.forEach(
 									ticket -> {
 										amount.getAndIncrement();

@@ -28,8 +28,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
 
 public class close implements CommandExecutor {
 
@@ -69,10 +71,10 @@ public class close implements CommandExecutor {
               && !src.hasPermission(Permissions.COMMAND_TICKET_CLOSE_ALL)) {
             throw new CommandException(Messages.getErrorTicketOwner());
           }
-          if (ticket.getStatus() == Closed) {
+          if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED) {
             throw new CommandException(Messages.getErrorTicketAlreadyClosed());
           }
-          if (ticket.getStatus() == Claimed
+          if (ticket.getStatus() == CLAIMED
               && !ticket.getStaffUUID().equals(uuid)
               && !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
             throw new CommandException(
@@ -84,7 +86,9 @@ public class close implements CommandExecutor {
             String comment = commentOP.get();
             ticket.setComment(comment);
           }
-          ticket.setStatus(Closed);
+
+          if (rejected.isPresent() && rejected.get()) ticket.setStatus(REJECTED);
+          else ticket.setStatus(APPROVED);
           ticket.setStaffUUID(uuid.toString());
 
           CommonUtil.notifyOnlineStaff(Messages.getTicketClose(ticketID, src.getName()));
@@ -119,7 +123,7 @@ public class close implements CommandExecutor {
           Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
           Plot plot = Plot.getPlot(location);
 
-          if (rejected.isPresent()) {
+          if (rejected.isPresent() && rejected.get()) {
             DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.RED, playerName, src, ticket, DiscordTicketStatus.REJECTED, plot);
           } else {
             DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, playerName, src, ticket, DiscordTicketStatus.APPROVED, plot);
@@ -132,9 +136,12 @@ public class close implements CommandExecutor {
             e.printStackTrace();
           }
 
-          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.build.other");
-          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.destroy.other");
-          Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission unset plots.admin.interact.other");
+          for (String staff : ticket.getAdditionalReviewers()) {
+            Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + staff + " permission unset plots.admin.build.other");
+            Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + staff + " permission unset plots.admin.destroy.other");
+            Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + staff + " permission unset plots.admin.interact.other");
+          }
+
           src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.AQUA, "Deactivated reviewer plot bypass."));
           return CommandResult.success();
         }

@@ -40,6 +40,8 @@ public class Messages {
 	// actions
 	private static String claimButton = "&b[&3Claim&b]";
 	private static String claimButtonHover = "&bClick here to claim this ticket.";
+	private static String addReviewerButton = "&b[&3Add Reviewer&b]";
+	private static String addReviewerButtonHover = "&bClick here to add another reviewer to this ticket.";
 	private static String unclaimButton = "&b[&3Unclaim&b]";
 	private static String unclaimButtonHover = "&bClick here to unclaim this ticket.";
 	private static String closeButton = "&b[&3Approve&b]";
@@ -52,7 +54,7 @@ public class Messages {
 	private static String holdButtonHover = "&bClick here to put this ticket on hold.";
 	private static String yesButton = "&b[&3Yes&b]";
 	private static String yesButtonHover = "&bClick here to confirm the overwrite.";
-	private static String rejectButton = "&b[&3Reject&b]";
+	private static String rejectButton = "&b[&cReject&b]";
 	private static String rejectButtonHover = "&bClick here to reject and close this ticket.";
 
 	// errors
@@ -585,5 +587,13 @@ public class Messages {
 
 	public static Text getErrorTicketServer ( int ticketID ) {
 		return parse(errorTicketServer, ticketID);
+	}
+
+	public static String getAddReviewerButton() {
+		return addReviewerButton;
+	}
+
+	public static String getAddReviewerButtonHover() {
+		return addReviewerButtonHover;
 	}
 }

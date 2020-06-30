@@ -13,6 +13,7 @@ import java.util.UUID;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
 
@@ -90,9 +91,10 @@ public final class MYSQLDataStore implements IDataStore {
 						rs.getDouble("yaw"),
 						rs.getDouble("pitch"),
 						rs.getString("message"),
-						ticketStatus.valueOf(rs.getString("status")),
+						ticketStatus.valueOf(rs.getString("status").toUpperCase()),
 						rs.getInt("notified"),
-						rs.getString("server")
+						rs.getString("server"),
+						rs.getString("additional_staff")
 				);
 				ticketList.add(ticketData);
 			}
@@ -129,7 +131,7 @@ public final class MYSQLDataStore implements IDataStore {
 		ArrayList<UUID> notifications = new ArrayList<>();
 		List<TicketData> ticketData = getTicketData();
 		for (TicketData ticket : ticketData) {
-			if (ticket.getNotified() == 0 && ticket.getStatus() == ticketStatus.Closed) {
+			if (ticket.getNotified() == 0 && ticket.getStatus() == ticketStatus.CLOSED) {
 				notifications.add(ticket.getPlayerUUID());
 			}
 		}
@@ -228,6 +230,16 @@ public final class MYSQLDataStore implements IDataStore {
 			plugin.getLogger().error("MySQL: Error updating playerdata", ex);
 		}
 		return false;
+	}
+
+	@Override
+	public boolean addComment(TicketData ticket, String comment, String source) {
+		return false;
+	}
+
+	@Override
+	public List<TicketComment> getComments(String plotMessage, UUID player) {
+		return null;
 	}
 
 	public boolean hasColumn ( String tableName, String columnName ) {

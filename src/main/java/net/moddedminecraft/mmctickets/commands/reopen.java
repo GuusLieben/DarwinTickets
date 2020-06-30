@@ -1,19 +1,23 @@
 package net.moddedminecraft.mmctickets.commands;
 
-import com.magitechserver.magibridge.MagiBridge;
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Open;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -41,16 +45,16 @@ public class reopen implements CommandExecutor {
 		} else {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
-					if (ticket.getStatus() == Claimed || ticket.getStatus() == Open) {
+					if (ticket.getStatus() == CLAIMED || ticket.getStatus() == OPEN) {
 						throw new CommandException(Messages.getErrorTicketNotClosed(ticketID));
 					}
-					if (ticket.getStatus() == Claimed) {
+					if (ticket.getStatus() == CLAIMED) {
 						throw new CommandException(
 								Messages.getErrorTicketClaim(
 										ticket.getTicketID(),
 										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					ticket.setStatus(Open);
+					ticket.setStatus(OPEN);
 					ticket.setStaffUUID(UUID.fromString("00000000-0000-0000-0000-000000000000").toString());
 					ticket.setComment("");
 					ticket.setNotified(0);
@@ -71,19 +75,10 @@ public class reopen implements CommandExecutor {
 						ticketPlayer.sendMessage(
 								Messages.getTicketReopenUser(src.getName(), ticket.getTicketID()));
 					}
-					EmbedBuilder embedBuilder = new EmbedBuilder();
-					embedBuilder.setColor(Color.YELLOW);
-					embedBuilder.setTitle("New submission");
-					embedBuilder.addField(
-							"Submitted by : " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()),
-							"ID assigned : " + ticketID + "\nPlot : " + ticket.getMessage(),
-							false);
-					embedBuilder.setThumbnail("https://app.buildersrefuge.com/img/created.png");
 
-					MagiBridge.jda
-							.getTextChannelById("525424284731047946")
-							.retrieveMessageById(ticket.getDiscordMessage())
-							.queue(msg -> msg.editMessage(embedBuilder.build()).queue());
+					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+					Plot plot = Plot.getPlot(location);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), ticket.getStatus().getAssociatedColor(), CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.NEW, plot);
 
 					return CommandResult.success();
 				}

@@ -13,9 +13,13 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Closed;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Held;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
@@ -56,22 +60,22 @@ public class claim implements CommandExecutor {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
 					if (!ticket.getStaffUUID().equals(uuid)
-							&& ticket.getStatus() == Claimed
+							&& ticket.getStatus() == CLAIMED
 							&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
 						throw new CommandException(
 								Messages.getErrorTicketClaim(
 										ticket.getTicketID(),
 										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					if (ticket.getStaffUUID().equals(uuid) && ticket.getStatus() == Claimed) {
+					if (ticket.getStaffUUID().equals(uuid) && ticket.getStatus() == CLAIMED) {
 						throw new CommandException(Messages.getErrorTicketClaim(ticket.getTicketID(), "you"));
 					}
-					if (ticket.getStatus() == Closed || ticket.getStatus() == Held) {
+					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED || ticket.getStatus() == HELD) {
 						throw new CommandException(Messages.getTicketNotOpen(ticketID));
 					}
 
 					ticket.setStaffUUID(uuid.toString());
-					ticket.setStatus(Claimed);
+					ticket.setStatus(CLAIMED);
 
 					try {
 						plugin.getDataStore().updateTicketData(ticket);

@@ -1,5 +1,9 @@
 package net.moddedminecraft.mmctickets.commands;
 
+import com.intellectualcrafters.plot.object.Location;
+import com.intellectualcrafters.plot.object.Plot;
+
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -9,8 +13,10 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.Claimed;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -18,8 +24,6 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.action.TextActions;
 
 public class comment implements CommandExecutor {
 
@@ -48,34 +52,18 @@ public class comment implements CommandExecutor {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
 					if (!ticket.getStaffUUID().equals(uuid)
-							&& ticket.getStatus() == Claimed
+							&& ticket.getStatus() == CLAIMED
 							&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
 						throw new CommandException(
 								Messages.getErrorTicketClaim(
 										ticket.getTicketID(),
 										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
 					}
-					if (!ticket.getComment().isEmpty()) {
-						if (src.hasPermission(Permissions.COMMAND_TICKET_EDIT_COMMENT)) {
-							Text.Builder action = Text.builder();
-							action.append(
-									Text.builder()
-											.append(plugin.fromLegacy(Messages.getYesButton()))
-											.onHover(
-													TextActions.showText(plugin.fromLegacy(Messages.getYesButtonHover())))
-											.onClick(
-													TextActions.executeCallback(
-															changeTicketComment(ticketID, comment, src.getName())))
-											.build());
-							src.sendMessage(Messages.getTicketCommentedit(ticketID));
-							src.sendMessage(action.build());
-							return CommandResult.success();
-						} else {
-							throw new CommandException(
-									Messages.getErrorGen("There is already a comment on this ticket."));
-						}
-					}
-					ticket.setComment(comment);
+					plugin.getDataStore().addComment(ticket, comment, src.getName());
+
+					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+					Plot plot = Plot.getPlot(location);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), ticket.getStatus().getAssociatedColor(), CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordUtil.convertStatus(ticket.getStatus()), plot);
 
 					try {
 						plugin.getDataStore().updateTicketData(ticket);
@@ -106,6 +94,7 @@ public class comment implements CommandExecutor {
 			for (TicketData ticket : tickets) {
 				if (ticket.getTicketID() == ticketID) {
 					ticket.setComment(comment);
+					plugin.getDataStore().addComment(ticket, comment, name);
 
 					try {
 						plugin.getDataStore().updateTicketData(ticket);
