@@ -56,9 +56,11 @@ public class TicketDataUtil {
     this.status = status;
     this.notified = notified;
     this.server = server;
-    if (additionalReviewers == null || "".equals(additionalReviewers))
-      this.additionalReviewers = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
-    else this.additionalReviewers = additionalReviewers;
+    if (additionalReviewers == null || "".equals(additionalReviewers)) {
+      String firstReviewer = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+      if (!(firstReviewer.equalsIgnoreCase("Console") || firstReviewer.equalsIgnoreCase(CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(playerUUID)))))
+        this.additionalReviewers = firstReviewer;
+    } else this.additionalReviewers = additionalReviewers;
   }
 
   public String getDiscordMessage() {

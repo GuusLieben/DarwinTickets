@@ -38,36 +38,6 @@ public class EventListener extends ListenerAdapter {
 
 	@Listener
 	public void onPlayerLogin ( ClientConnectionEvent.Join event, @Root Player player ) {
-		// If the playerdata for the player exists, Check if they have changed their name.
-		Sponge.getScheduler()
-				.createTaskBuilder()
-				.execute(
-						new Runnable() {
-							public void run () {
-								boolean exists = false;
-								final List<PlayerData> playerData =
-										new ArrayList<PlayerData>(plugin.getDataStore().getPlayerData());
-								for (PlayerData pData : playerData) {
-									if (pData.getPlayerUUID().equals(player.getUniqueId())
-											&& !pData.getPlayerName().equals(player.getName())) {
-										exists = true;
-										pData.setPlayerName(player.getName());
-										try {
-											plugin.getDataStore().updatePlayerData(pData);
-										} catch (Exception e) {
-											e.printStackTrace();
-										}
-									}
-								}
-								if (!exists) {
-									CommonUtil.checkPlayerData(plugin, player);
-								}
-							}
-						})
-				.delay(15, TimeUnit.SECONDS)
-				.name("mmctickets-s-checkUserNameOnLogin")
-				.submit(this.plugin);
-
 		// Notify a player if a ticket they created was closed while they were offline
 		if (plugin.getDataStore().getNotifications().contains(player.getUniqueId())) {
 			final List<TicketData> tickets =

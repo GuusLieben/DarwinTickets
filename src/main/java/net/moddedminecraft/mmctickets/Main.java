@@ -6,7 +6,6 @@ import com.magitechserver.magibridge.MagiBridge;
 
 import net.moddedminecraft.mmctickets.commands.AddStaff;
 import net.moddedminecraft.mmctickets.commands.assign;
-import net.moddedminecraft.mmctickets.commands.ban;
 import net.moddedminecraft.mmctickets.commands.claim;
 import net.moddedminecraft.mmctickets.commands.close;
 import net.moddedminecraft.mmctickets.commands.comment;
@@ -22,7 +21,6 @@ import net.moddedminecraft.mmctickets.commands.subcommands.readHeld;
 import net.moddedminecraft.mmctickets.commands.subcommands.readSelf;
 import net.moddedminecraft.mmctickets.commands.teleport;
 import net.moddedminecraft.mmctickets.commands.ticket;
-import net.moddedminecraft.mmctickets.commands.unban;
 import net.moddedminecraft.mmctickets.commands.unclaim;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
@@ -231,24 +229,6 @@ public class Main {
 						.permission(Permissions.COMMAND_ADD_STAFF)
 						.build();
 
-		// /ticket ban (username)
-		CommandSpec ticketBan =
-				CommandSpec.builder()
-						.description(Text.of("Ban a player from being able to create new tickets"))
-						.executor(new ban(this))
-						.arguments(GenericArguments.user(Text.of("playername")))
-						.permission(Permissions.COMMAND_TICKET_BAN)
-						.build();
-
-		// /ticket unban (username)
-		CommandSpec ticketUnban =
-				CommandSpec.builder()
-						.description(Text.of("Unban a player from being able to create new tickets"))
-						.executor(new unban(this))
-						.arguments(GenericArguments.user(Text.of("playername")))
-						.permission(Permissions.COMMAND_TICKET_BAN)
-						.build();
-
 		// /ticket reload
 		CommandSpec ticketReload =
 				CommandSpec.builder()
@@ -344,8 +324,6 @@ public class Main {
 						.child(ticketOpen, "open")
 						.child(ticketRead, "read", "check")
 						.child(ticketClose, "close", "complete")
-						.child(ticketBan, "ban")
-						.child(ticketUnban, "unban")
 						.child(ticketReload, "reload")
 						.child(ticketClaim, "claim")
 						.child(ticketUnclaim, "unclaim")

@@ -91,7 +91,7 @@ public final class MYSQLDataStore implements IDataStore {
 						rs.getDouble("yaw"),
 						rs.getDouble("pitch"),
 						rs.getString("message"),
-						ticketStatus.valueOf(rs.getString("status").toUpperCase()),
+						ticketStatus.fromString(rs.getString("status")),
 						rs.getInt("notified"),
 						rs.getString("server"),
 						rs.getString("additional_staff")

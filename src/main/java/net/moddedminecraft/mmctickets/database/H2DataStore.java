@@ -1,6 +1,15 @@
 package net.moddedminecraft.mmctickets.database;
 
+import com.intellectualcrafters.plot.commands.Copy;
 import com.zaxxer.hikari.HikariDataSource;
+
+import net.moddedminecraft.mmctickets.Main;
+import net.moddedminecraft.mmctickets.config.Config;
+import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.TicketComment;
+import net.moddedminecraft.mmctickets.data.TicketData;
+import net.moddedminecraft.mmctickets.data.ticketStatus;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -11,19 +20,19 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import net.moddedminecraft.mmctickets.Main;
-import net.moddedminecraft.mmctickets.config.Config;
-import net.moddedminecraft.mmctickets.data.PlayerData;
-import net.moddedminecraft.mmctickets.data.TicketComment;
-import net.moddedminecraft.mmctickets.data.TicketData;
-import net.moddedminecraft.mmctickets.data.ticketStatus;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public final class H2DataStore implements IDataStore {
 
 	private final Main plugin;
 	private final Optional<HikariDataSource> dataSource;
+	private final Map<Integer, TicketData> tickets = new ConcurrentHashMap<>();
+	private final Map<Integer, List<TicketComment>> comments = new ConcurrentHashMap<>();
 
 	public H2DataStore ( Main plugin ) {
 		this.plugin = plugin;
@@ -91,6 +100,8 @@ public final class H2DataStore implements IDataStore {
 
 	@Override
 	public List<TicketData> getTicketData () {
+		if (!tickets.isEmpty()) return new ArrayList<>(tickets.values());
+
 		List<TicketData> ticketList = new ArrayList<>();
 
 		try (Connection connection = getConnection()) {
@@ -109,7 +120,7 @@ public final class H2DataStore implements IDataStore {
 						rs.getDouble("yaw"),
 						rs.getDouble("pitch"),
 						rs.getString("message"),
-						ticketStatus.valueOf(rs.getString("status").toUpperCase()),
+						ticketStatus.fromString(rs.getString("status")),
 						rs.getInt("notified"),
 						rs.getString("server"),
 						rs.getString("additional_staff")
@@ -117,6 +128,7 @@ public final class H2DataStore implements IDataStore {
 				ticketData.setDiscordMessage(rs.getString("discord"));
 				ticketList.add(ticketData);
 			}
+			ticketList.forEach(ticket -> this.tickets.put(ticket.getTicketID(), ticket));
 			return ticketList;
 		} catch (SQLException ex) {
 			plugin.getLogger().info("H2: Couldn't read ticketdata from H2 database.", ex);
@@ -159,20 +171,38 @@ public final class H2DataStore implements IDataStore {
 
 	@Override
 	public Optional<TicketData> getTicket ( int ticketID ) {
-		List<TicketData> ticketList = getTicketData();
-		if (ticketList == null || ticketList.isEmpty()) {
+		try (Connection connection = getConnection()) {
+			ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + Config.h2Prefix + "tickets");
+			rs.next();
+			TicketData ticketData = new TicketData(
+					rs.getInt("ticketid"),
+					rs.getString("playeruuid"),
+					rs.getString("staffuuid"),
+					rs.getString("comment"),
+					rs.getInt("timestamp"),
+					rs.getString("world"),
+					rs.getInt("coordx"),
+					rs.getInt("coordy"),
+					rs.getInt("coordz"),
+					rs.getDouble("yaw"),
+					rs.getDouble("pitch"),
+					rs.getString("message"),
+					ticketStatus.fromString(rs.getString("status")),
+					rs.getInt("notified"),
+					rs.getString("server"),
+					rs.getString("additional_staff")
+			);
+			ticketData.setDiscordMessage(rs.getString("discord"));
+			return Optional.of(ticketData);
+		} catch (SQLException ex) {
+			plugin.getLogger().info("H2: Couldn't read ticketdata from H2 database.", ex);
 			return Optional.empty();
 		}
-		for (TicketData ticket : ticketList) {
-			if (ticket.getTicketID() == ticketID) {
-				return Optional.of(ticket);
-			}
-		}
-		return Optional.empty();
 	}
 
 	@Override
 	public boolean addTicketData ( TicketData ticketData ) {
+		this.tickets.put(ticketData.getTicketID(), ticketData);
 		try (Connection connection = getConnection()) {
 			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 			statement.setInt(1, ticketData.getTicketID());
@@ -215,6 +245,7 @@ public final class H2DataStore implements IDataStore {
 
 	@Override
 	public boolean updateTicketData ( TicketData ticketData ) {
+		this.tickets.put(ticketData.getTicketID(), ticketData);
 		try (Connection connection = getConnection()) {
 			PreparedStatement statement = connection.prepareStatement("MERGE INTO " + Config.h2Prefix + "tickets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 			statement.setInt(1, ticketData.getTicketID());
@@ -257,6 +288,9 @@ public final class H2DataStore implements IDataStore {
 
 	@Override
 	public boolean addComment(TicketData ticket, String comment, String source) {
+		if (!this.comments.containsKey(ticket.getTicketID())) {
+			this.comments.put(ticket.getTicketID(), new CopyOnWriteArrayList<>());
+		}
 		try (Connection connection = getConnection()) {
 			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "comments VALUES (?, ?, ?, ?, ?, ?);");
 			statement.setString(1, comment);
@@ -275,7 +309,6 @@ public final class H2DataStore implements IDataStore {
 	@Override
 	public List<TicketComment> getComments(String plotMessage, UUID player) {
 		List<TicketComment> comments = new ArrayList<>();
-
 		try (Connection connection = getConnection()) {
 			PreparedStatement statement = connection.prepareStatement("SELECT comment, source, posted, ticketid FROM " + Config.h2Prefix + "comments WHERE plot = ? AND player = ?");
 			statement.setString(1, plotMessage);

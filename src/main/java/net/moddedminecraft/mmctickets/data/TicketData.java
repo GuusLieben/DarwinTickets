@@ -67,7 +67,7 @@ public class TicketData extends TicketDataUtil {
 							node.getNode("yaw").getDouble(),
 							node.getNode("pitch").getDouble(),
 							node.getNode("message").getString(),
-							ticketStatus.valueOf(node.getNode("status").getString().toUpperCase()),
+							ticketStatus.fromString(node.getNode("status").getString()),
 							node.getNode("notified").getInt(),
 							node.getNode("server").getString(),
 							node.getNode("additional_staff").getString());

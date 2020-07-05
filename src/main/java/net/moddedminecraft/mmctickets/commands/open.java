@@ -89,7 +89,11 @@ public class open implements CommandExecutor {
           if (ticket.getTicketID() == ticketID) {
             ticketID++;
           }
-          if (ticket.getPlayerUUID().equals(uuid) && ticket.getStatus() != CLOSED) {
+          if (ticket.getPlayerUUID().equals(uuid)
+                  && ticket.getStatus() != CLOSED
+                  && ticket.getStatus() != REJECTED
+                  && ticket.getStatus() != APPROVED
+          ) {
             totalTickets++;
           }
           if (Config.preventDuplicates) {
@@ -114,13 +118,13 @@ public class open implements CommandExecutor {
         throw new CommandException(Messages.getTicketTooShort(Config.minWords));
       }
 
-      final List<PlayerData> playerData =
-          new ArrayList<PlayerData>(plugin.getDataStore().getPlayerData());
-      for (PlayerData pData : playerData) {
-        if (pData.getPlayerName().equals(src.getName()) && pData.getBannedStatus() == 1) {
-          throw new CommandException(Messages.getErrorBanned());
-        }
-      }
+//      final List<PlayerData> playerData =
+//          new ArrayList<PlayerData>(plugin.getDataStore().getPlayerData());
+//      for (PlayerData pData : playerData) {
+//        if (pData.getPlayerName().equals(src.getName()) && pData.getBannedStatus() == 1) {
+//          throw new CommandException(Messages.getErrorBanned());
+//        }
+//      }
 
       if (plot != null) {
         try {
@@ -141,7 +145,7 @@ public class open implements CommandExecutor {
                           OPEN,
                           0,
                           Config.server,
-                          player.getName());
+                          null);
 
           player.sendMessage(Messages.getTicketOpenUser(ticketID));
           if (Config.staffNotification) {
@@ -218,7 +222,7 @@ public class open implements CommandExecutor {
                                 OPEN,
                                 0,
                                 Config.server,
-                                "server"));
+                                null));
 
         src.sendMessage(Messages.getTicketOpenUser(ticketID));
         if (Config.staffNotification) {

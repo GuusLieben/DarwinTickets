@@ -1,6 +1,8 @@
 package net.moddedminecraft.mmctickets.data;
 
 
+import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
+
 import java.awt.Color;
 
 public enum ticketStatus {
@@ -26,5 +28,10 @@ public enum ticketStatus {
 
 	public Color getAssociatedColor() {
 		return this.color;
+	}
+
+	public static ticketStatus fromString(String value) {
+		if ("LEGACY CLOSED".equals(value.toUpperCase())) return CLOSED;
+		else return ticketStatus.valueOf(value.toUpperCase());
 	}
 }

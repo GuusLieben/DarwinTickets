@@ -159,17 +159,19 @@ public class CommonUtil {
 	}
 
 	public static String getPlayerNameFromData ( Main plugin, UUID uuid ) {
-		if (uuid.toString().equals("00000000-0000-0000-0000-000000000000")) {
-			return "Console";
-		}
-
-		List<PlayerData> playerData = plugin.getDataStore().getPlayerData();
-		for (PlayerData pData : playerData) {
-			if (pData.getPlayerUUID().equals(uuid)) {
-				return pData.getPlayerName();
+		return Sponge.getServer().getPlayer(uuid).map(Player::getName).orElseGet(() -> {
+			if (uuid.toString().equals("00000000-0000-0000-0000-000000000000")) {
+				return "Console";
 			}
-		}
-		return "Unavailable";
+
+			List<PlayerData> playerData = plugin.getDataStore().getPlayerData();
+			for (PlayerData pData : playerData) {
+				if (pData.getPlayerUUID().equals(uuid)) {
+					return pData.getPlayerName();
+				}
+			}
+			return "Unavailable";
+		});
 	}
 
 	public static UUID getUUIDFromName ( String name ) {
