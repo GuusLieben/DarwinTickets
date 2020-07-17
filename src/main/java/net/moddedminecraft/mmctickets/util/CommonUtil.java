@@ -1,25 +1,29 @@
 package net.moddedminecraft.mmctickets.util;
 
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
+
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.title.Title;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
 
 public class CommonUtil {
 	private static final int SECOND_MILLIS = 1000;
@@ -170,7 +174,12 @@ public class CommonUtil {
 					return pData.getPlayerName();
 				}
 			}
-			return "Unavailable";
+
+			return Sponge.getServiceManager().provide(UserStorageService.class)
+					.map(userStorageService -> userStorageService
+							.get(uuid).map(User::getName)
+							.orElse("Unavailable"))
+					.orElse("Unavailable");
 		});
 	}
 

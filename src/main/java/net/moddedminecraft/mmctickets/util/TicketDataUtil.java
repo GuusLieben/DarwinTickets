@@ -164,15 +164,20 @@ public class TicketDataUtil {
   }
 
   public String getAdditionalStaff() {
-    if (additionalReviewers == null || "".equals(additionalReviewers))
-      return CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+    if (additionalReviewers == null || "".equals(additionalReviewers)) {
+      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID))
+        return CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+      else return "Unknown";
+    }
 
     return additionalReviewers;
   }
 
   public String[] getAdditionalReviewers() {
     if (additionalReviewers == null || "".equals(additionalReviewers))
-      return new String[]{CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID))};
+      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID))
+        return new String[]{CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID))};
+      else return new String[]{"Unknown"};
 
     return additionalReviewers.split(",");
   }
