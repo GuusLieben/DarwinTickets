@@ -3,17 +3,10 @@ package net.moddedminecraft.mmctickets.commands;
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Consumer;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 
@@ -24,6 +17,14 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
 
 public class comment implements CommandExecutor {
 
@@ -40,7 +41,7 @@ public class comment implements CommandExecutor {
 
 		final List<TicketData> tickets =
 				new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
-		UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
+		UUID uuid = null;
 		if (src instanceof Player) {
 			Player player = (Player) src;
 			uuid = player.getUniqueId();

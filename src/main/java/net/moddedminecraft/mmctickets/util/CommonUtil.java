@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-
 public class CommonUtil {
 	private static final int SECOND_MILLIS = 1000;
 	private static final int MINUTE_MILLIS = 60 * SECOND_MILLIS;
@@ -92,10 +87,26 @@ public class CommonUtil {
 
 	public static String getTicketStatusColour ( ticketStatus ticketIDStatus ) {
 		String ticketStatus = "";
-		if (ticketIDStatus == OPEN) ticketStatus = "&bOpen";
-		if (ticketIDStatus == CLAIMED) ticketStatus = "&bClaimed";
-		if (ticketIDStatus == HELD) ticketStatus = "&bHeld";
-		if (ticketIDStatus == CLOSED) ticketStatus = "&bClosed";
+		switch (ticketIDStatus) {
+			case OPEN:
+				ticketStatus = "&bOpen";
+				break;
+			case CLAIMED:
+				ticketStatus = "&bClaimed";
+				break;
+			case HELD:
+				ticketStatus = "&bHeld";
+				break;
+			case CLOSED:
+				ticketStatus = "&bClosed";
+				break;
+			case REJECTED:
+				ticketStatus = "&bRejected";
+				break;
+			case APPROVED:
+				ticketStatus = "&bApproved";
+				break;
+		}
 
 		return ticketStatus;
 	}

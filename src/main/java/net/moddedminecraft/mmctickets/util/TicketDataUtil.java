@@ -57,9 +57,11 @@ public class TicketDataUtil {
     this.notified = notified;
     this.server = server;
     if (additionalReviewers == null || "".equals(additionalReviewers)) {
-      String firstReviewer = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
-      if (!(firstReviewer.equalsIgnoreCase("Console") || firstReviewer.equalsIgnoreCase(CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(playerUUID)))))
-        this.additionalReviewers = firstReviewer;
+      if (staffUUID != null) {
+        String firstReviewer = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
+        if (!(firstReviewer.equalsIgnoreCase("Console") || firstReviewer.equalsIgnoreCase(CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(playerUUID)))))
+          this.additionalReviewers = firstReviewer;
+      }
     } else this.additionalReviewers = additionalReviewers;
   }
 
@@ -80,7 +82,11 @@ public class TicketDataUtil {
   }
 
   public UUID getStaffUUID() {
-    return UUID.fromString(staffUUID);
+    if (staffUUID == null) {
+      return UUID.fromString("00000000-0000-0000-0000-000000000000");
+    } else {
+      return UUID.fromString(staffUUID);
+    }
   }
 
   public String getOldPlayer() {
@@ -149,6 +155,10 @@ public class TicketDataUtil {
 
   public void setStaffUUID(String uuid) {
     this.staffUUID = uuid;
+    if (uuid != null) {
+      String firstReviewer = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
+      this.additionalReviewers = firstReviewer;
+    }
   }
 
   public void setPlayerUUID(UUID uuid) {
@@ -160,12 +170,16 @@ public class TicketDataUtil {
   }
 
   public void addAdditionalReviewer(String reviewer) {
-    this.additionalReviewers += "," + reviewer;
+    if (this.additionalReviewers == null || "".equals(this.additionalReviewers)) {
+      this.additionalReviewers = reviewer;
+    } else {
+      this.additionalReviewers += "," + reviewer;
+    }
   }
 
   public String getAdditionalStaff() {
     if (additionalReviewers == null || "".equals(additionalReviewers)) {
-      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID))
+      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID) && staffUUID != null)
         return CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
       else return "Unknown";
     }
@@ -175,7 +189,7 @@ public class TicketDataUtil {
 
   public String[] getAdditionalReviewers() {
     if (additionalReviewers == null || "".equals(additionalReviewers))
-      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID))
+      if (!"00000000-0000-0000-0000-000000000000".equals(staffUUID) && staffUUID != null)
         return new String[]{CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID))};
       else return new String[]{"Unknown"};
 

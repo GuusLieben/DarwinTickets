@@ -6,7 +6,6 @@ import com.intellectualcrafters.plot.object.Plot;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
-import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
@@ -132,7 +131,7 @@ public class open implements CommandExecutor {
                   new TicketData(
                           ticketID,
                           String.valueOf(uuid),
-                          UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
+                          null,
                           "",
                           System.currentTimeMillis() / 1000,
                           player.getWorld().getName(),
@@ -209,7 +208,7 @@ public class open implements CommandExecutor {
                         new TicketData(
                                 ticketID,
                                 UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
-                                UUID.fromString("00000000-0000-0000-0000-000000000000").toString(),
+                                null,
                                 "",
                                 System.currentTimeMillis() / 1000,
                                 Sponge.getServer().getDefaultWorldName(),

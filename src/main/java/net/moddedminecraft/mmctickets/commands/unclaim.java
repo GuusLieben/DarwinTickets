@@ -2,26 +2,11 @@ package net.moddedminecraft.mmctickets.commands;
 
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
-import com.magitechserver.magibridge.MagiBridge;
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.TicketData;
-
-import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
-
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
@@ -34,6 +19,18 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.source.ConsoleSource;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
 
 public class unclaim implements CommandExecutor {
 
@@ -48,7 +45,7 @@ public class unclaim implements CommandExecutor {
 		final int ticketID = args.<Integer>getOne("ticketID").get();
 		final List<TicketData> tickets =
 				new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
-		UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
+		UUID uuid = null;
 		if (src instanceof Player) {
 			Player player = (Player) src;
 			uuid = player.getUniqueId();
@@ -76,7 +73,12 @@ public class unclaim implements CommandExecutor {
 						throw new CommandException(Messages.getTicketNotOpen(ticketID));
 					}
 
-					ticket.setStaffUUID(UUID.fromString("00000000-0000-0000-0000-000000000000").toString());
+					if (src instanceof Player) {
+						ticket.setStaffUUID(((Player) src).getUniqueId().toString());
+					} else {
+						ticket.setStaffUUID(null);
+					}
+
 					ticket.setStatus(OPEN);
 
 					try {

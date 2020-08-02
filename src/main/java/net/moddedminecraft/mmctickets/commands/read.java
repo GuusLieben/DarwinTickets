@@ -53,7 +53,7 @@ public class read implements CommandExecutor {
         final List<TicketData> tickets =
                 new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
 
-        UUID uuid = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        UUID uuid = null;
         if (src instanceof Player) {
             Player player = (Player) src;
             uuid = player.getUniqueId();
