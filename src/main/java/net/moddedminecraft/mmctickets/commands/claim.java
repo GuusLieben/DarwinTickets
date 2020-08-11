@@ -47,65 +47,65 @@ public class claim implements CommandExecutor {
 		final List<TicketData> tickets =
 				new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
 
-		UUID uuid = null;
 		if (src instanceof Player) {
 			Player player = (Player) src;
-			uuid = player.getUniqueId();
-		}
+			UUID uuid = player.getUniqueId();
 
-		if (tickets.isEmpty()) {
-			throw new CommandException(Messages.getErrorGen("Tickets list is empty."));
-		} else {
-			for (TicketData ticket : tickets) {
-				if (ticket.getTicketID() == ticketID) {
-					if (!ticket.getStaffUUID().equals(uuid)
-							&& ticket.getStatus() == CLAIMED
-							&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
-						throw new CommandException(
-								Messages.getErrorTicketClaim(
-										ticket.getTicketID(),
-										CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
+			if (tickets.isEmpty()) {
+				throw new CommandException(Messages.getErrorGen("Tickets list is empty."));
+			} else {
+				for (TicketData ticket : tickets) {
+					if (ticket.getTicketID() == ticketID) {
+						if (!ticket.getStaffUUID().equals(uuid)
+								&& ticket.getStatus() == CLAIMED
+								&& !src.hasPermission(Permissions.CLAIMED_TICKET_BYPASS)) {
+							throw new CommandException(
+									Messages.getErrorTicketClaim(
+											ticket.getTicketID(),
+											CommonUtil.getPlayerNameFromData(plugin, ticket.getStaffUUID())));
+						}
+						if (ticket.getStaffUUID().equals(uuid) && ticket.getStatus() == CLAIMED) {
+							throw new CommandException(Messages.getErrorTicketClaim(ticket.getTicketID(), "you"));
+						}
+						if (ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED || ticket.getStatus() == HELD) {
+							throw new CommandException(Messages.getTicketNotOpen(ticketID));
+						}
+
+						ticket.setStaffUUID(uuid.toString());
+						ticket.setStatus(CLAIMED);
+
+						try {
+							plugin.getDataStore().updateTicketData(ticket);
+						} catch (Exception e) {
+							src.sendMessage(Messages.getErrorGen("Unable to claim ticket"));
+							e.printStackTrace();
+						}
+
+						Optional<Player> ticketPlayerOP = Sponge.getServer().getPlayer(ticket.getPlayerUUID());
+						if (ticketPlayerOP.isPresent()) {
+							Player ticketPlayer = ticketPlayerOP.get();
+							ticketPlayer.sendMessage(
+									Messages.getTicketClaimUser(src.getName(), ticket.getTicketID()));
+						}
+
+						CommonUtil.notifyOnlineStaff(
+								Messages.getTicketClaim(src.getName(), ticket.getTicketID()));
+
+						Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
+						Plot plot = Plot.getPlot(location);
+						DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.CLAIMED, plot);
+
+						Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.build.other true");
+						Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.destroy.other true");
+						Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.interact.other true");
+						src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.AQUA, "Activated reviewer plot bypass, note that you will have to relog for this bypass to take effect"));
+
+						return CommandResult.success();
 					}
-					if (ticket.getStaffUUID().equals(uuid) && ticket.getStatus() == CLAIMED) {
-						throw new CommandException(Messages.getErrorTicketClaim(ticket.getTicketID(), "you"));
-					}
-					if ( ticket.getStatus() == CLOSED || ticket.getStatus() == REJECTED || ticket.getStatus() == APPROVED || ticket.getStatus() == HELD) {
-						throw new CommandException(Messages.getTicketNotOpen(ticketID));
-					}
-
-					ticket.setStaffUUID(uuid.toString());
-					ticket.setStatus(CLAIMED);
-
-					try {
-						plugin.getDataStore().updateTicketData(ticket);
-					} catch (Exception e) {
-						src.sendMessage(Messages.getErrorGen("Unable to claim ticket"));
-						e.printStackTrace();
-					}
-
-					Optional<Player> ticketPlayerOP = Sponge.getServer().getPlayer(ticket.getPlayerUUID());
-					if (ticketPlayerOP.isPresent()) {
-						Player ticketPlayer = ticketPlayerOP.get();
-						ticketPlayer.sendMessage(
-								Messages.getTicketClaimUser(src.getName(), ticket.getTicketID()));
-					}
-
-					CommonUtil.notifyOnlineStaff(
-							Messages.getTicketClaim(src.getName(), ticket.getTicketID()));
-
-					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
-					Plot plot = Plot.getPlot(location);
-					DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.CLAIMED, plot);
-
-					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.build.other true");
-					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.destroy.other true");
-					Sponge.getCommandManager().process(Sponge.getServer().getConsole(), "lp user " + src.getName() + " permission set plots.admin.interact.other true");
-					src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.AQUA, "Activated reviewer plot bypass, note that you will have to relog for this bypass to take effect"));
-
-					return CommandResult.success();
 				}
+				throw new CommandException(Messages.getTicketNotExist(ticketID));
 			}
-			throw new CommandException(Messages.getTicketNotExist(ticketID));
 		}
+		throw new CommandException(Text.of("Only a player can claim a ticket"));
 	}
 }
