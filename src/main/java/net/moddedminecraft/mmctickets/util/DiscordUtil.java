@@ -13,6 +13,7 @@ import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
 
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.args.CommandArgs;
 
 import java.awt.Color;
 import java.time.OffsetDateTime;
@@ -60,7 +61,9 @@ public class DiscordUtil {
 
     public static void sendToChannel(Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot, Consumer<Message> consumer) {
         TextChannel channel = MagiBridge.jda.getTextChannelById(channelId);
-        channel.sendMessage(getEmbed(color, submitter, handler, ticketData, ticketStatus, plot)).queue(consumer);
+
+        if(channel != null)
+            channel.sendMessage(getEmbed(color, submitter, handler, ticketData, ticketStatus, plot)).queue(consumer);
     }
 
     public static void editMessage(String messageId, Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
@@ -96,8 +99,11 @@ public class DiscordUtil {
                 .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
                 .addField("Comment(s)", comment, true);
 
+//        if (handler != null)
+//            embedBuilder.addField("Handled by", ticketData.getAdditionalStaff().replaceAll(",", ", "), false);
+
         if (handler != null)
-            embedBuilder.addField("Handled by", ticketData.getAdditionalStaff().replaceAll(",", ", "), false);
+            embedBuilder.addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
 
         return embedBuilder.build();
     }

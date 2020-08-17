@@ -155,10 +155,8 @@ public class TicketDataUtil {
 
   public void setStaffUUID(String uuid) {
     this.staffUUID = uuid;
-    if (uuid != null) {
-      String firstReviewer = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
-      this.additionalReviewers = firstReviewer;
-    }
+    if (uuid != null)
+      this.additionalReviewers = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
   }
 
   public void setPlayerUUID(UUID uuid) {
@@ -183,7 +181,6 @@ public class TicketDataUtil {
         return CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(staffUUID));
       else return "Unknown";
     }
-
     return additionalReviewers;
   }
 
