@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 public class DiscordUtil {
 
     private static Main plugin = null;
-    private static final String channelId = "742789616066625547";
+    private static final String channelId = "525424284731047946";
 
     public static void setPlugin(Main plugin) {
         DiscordUtil.plugin = plugin;
