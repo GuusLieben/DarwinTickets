@@ -179,18 +179,21 @@ public class CommonUtil {
 				return "Console";
 			}
 
+			String internalName = "Unavailable";
 			List<PlayerData> playerData = plugin.getDataStore().getPlayerData();
 			for (PlayerData pData : playerData) {
 				if (pData.getPlayerUUID().equals(uuid)) {
-					return pData.getPlayerName();
+					internalName = pData.getPlayerName();
+					break;
 				}
 			}
 
+			String finalInternalName = internalName;
 			return Sponge.getServiceManager().provide(UserStorageService.class)
 					.map(userStorageService -> userStorageService
 							.get(uuid).map(User::getName)
-							.orElse("Unavailable"))
-					.orElse("Unavailable");
+							.orElse(finalInternalName))
+					.orElse(internalName);
 		});
 	}
 
