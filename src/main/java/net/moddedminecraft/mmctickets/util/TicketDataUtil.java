@@ -155,8 +155,16 @@ public class TicketDataUtil {
 
   public void setStaffUUID(String uuid) {
     this.staffUUID = uuid;
-    if (uuid != null)
-      this.additionalReviewers = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
+//    if(uuid != null)
+//      this.additionalReviewers = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
+    if (uuid != null) {
+      String name = CommonUtil.getPlayerNameFromData(Main.INSTANCE, UUID.fromString(uuid));
+      if(this.additionalReviewers == null)
+        this.additionalReviewers = name;
+
+      if(!this.additionalReviewers.contains(name))
+        this.additionalReviewers += "," + name;
+    }
   }
 
   public void setPlayerUUID(UUID uuid) {
