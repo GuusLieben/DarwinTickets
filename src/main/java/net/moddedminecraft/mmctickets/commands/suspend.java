@@ -18,6 +18,8 @@ import org.spongepowered.api.text.format.TextColors;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class suspend implements CommandExecutor {
     private final Main plugin;
@@ -50,13 +52,19 @@ public class suspend implements CommandExecutor {
         }
 
         // Get the suspension time
-        final Optional<Integer> time = args.getOne("time");
+        final Optional<String> time = args.getOne("time");
         if(!time.isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "A time must be specified"));
             return CommandResult.empty();
         }
 
-        long suspensionTime = time.get();
+        Optional<Long> timeFromPattern = this.getSecondsFromPattern(time.get());
+        if(!timeFromPattern.isPresent()) {
+            player.sendMessage(Text.of(TextColors.RED, "Cannot read given time"));
+            return CommandResult.empty();
+        }
+
+        long suspensionTime = timeFromPattern.get();
 
         final Collection<PlotSuspension> suspensions = new ArrayList<>(this.plugin.getDataStore().getSuspensionsData());
         int id = suspensions.size() + 1;
@@ -68,4 +76,66 @@ public class suspend implements CommandExecutor {
 
         return CommandResult.success();
     }
+
+    private Optional<Long> getSecondsFromPattern(String input) {
+        Pattern pattern = Pattern.compile(TimeUnit.getPattern());
+        Matcher matcher = pattern.matcher(input.toLowerCase());
+
+        boolean isValidFormat = matcher.find();
+        long seconds = 0;
+
+        if (isValidFormat) {
+            for (int i = 1; i <= matcher.groupCount(); i++) {
+                String match = matcher.group(i);
+
+                if (null != match) {
+                    //The number is everything except the last character, which is the unit.
+                    int num = Integer.parseInt(match.substring(0, match.length() - 1));
+                    TimeUnit unit = TimeUnit.unitFromIndex(i - 1);
+                    //Apply the multiplier to the unit, to convert it to seconds.
+                    seconds += num * unit.getToSecondsMultiplier();
+                }
+            }
+        } else return Optional.empty();
+
+        return Optional.of(seconds);
+    }
+
+
+    private enum TimeUnit {
+        DAYS("d", 24 * 60 * 60),
+        HOURS("h", 60 * 60),
+        MINUTES("m", 60),
+        SECONDS("s", 1);
+
+        String character;
+        int toSecondsMultiplier;
+
+        TimeUnit(String character, int toSecondsMultiplier) {
+            this.character = character;
+            this.toSecondsMultiplier= toSecondsMultiplier;
+        }
+
+        public int getToSecondsMultiplier() {
+            return this.toSecondsMultiplier;
+        }
+
+        public String getCharacter() {
+            return this.character;
+        }
+
+        public static TimeUnit unitFromIndex(int index) {
+            return TimeUnit.values()[index];
+        }
+
+        public static String getPattern() {
+            StringBuilder pattern = new StringBuilder();
+            for (TimeUnit unit : TimeUnit.values()) {
+                pattern.append(String.format("(\\d*%s)?", unit.getCharacter()));
+            }
+
+            return pattern.toString();
+        }
+    }
+
 }

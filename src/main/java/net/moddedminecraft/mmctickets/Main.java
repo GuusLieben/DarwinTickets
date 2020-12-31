@@ -346,7 +346,7 @@ public class Main {
 				CommandSpec.builder()
 						.description(Text.of("Suspend a plot from submission"))
 						.executor(new suspend(this))
-						.arguments(GenericArguments.integer(Text.of("time")))
+						.arguments(GenericArguments.string(Text.of("time")))
 						.permission(Permissions.COMMAND_PLOT_SUSPEND)
 						.build();
 
