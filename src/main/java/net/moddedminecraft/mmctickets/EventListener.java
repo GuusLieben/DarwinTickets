@@ -253,6 +253,10 @@ public class EventListener extends ListenerAdapter {
 		Player player = event.getPlayer();
 		Plot plot = event.getPlot();
 
+		// Check if the plot disabled suspension notifications
+		if(!plot.getFlag(this.plugin.getPlotFlagManager().SUSPENSION_FLAG, true))
+			return;
+
 		// Trigger only for the owners of the plot
 		if(!plot.getOwners().contains(player.getUniqueId()))
 			return;

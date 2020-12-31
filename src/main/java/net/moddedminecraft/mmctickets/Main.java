@@ -2,6 +2,8 @@ package net.moddedminecraft.mmctickets;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.intellectualcrafters.plot.flag.Flag;
+import com.intellectualcrafters.plot.flag.Flags;
 import com.magitechserver.magibridge.MagiBridge;
 
 import net.moddedminecraft.mmctickets.commands.AddStaff;
@@ -88,8 +90,10 @@ public class Main {
 
 	private CommandManager cmdManager = Sponge.getCommandManager();
 
+
 	private ArrayList<String> waitTimer;
 	private DataStoreManager dataStoreManager;
+	private PlotFlagManager plotFlagManager;
 
 	public static Main INSTANCE;
 
@@ -122,8 +126,15 @@ public class Main {
 		}
 	}
 
+	public PlotFlagManager getPlotFlagManager() {
+		return this.plotFlagManager;
+	}
+
 	@Listener
 	public void onServerStart ( GameStartedServerEvent event ) {
+		this.plotFlagManager = new PlotFlagManager(this);
+		this.plotFlagManager.init();
+
 		getLogger().info("MMCTickets Loaded");
 		getLogger().info("Tickets loaded: " + getDataStore().getTicketData().size());
 		getLogger().info("Notifications loaded: " + getDataStore().getNotifications().size());
