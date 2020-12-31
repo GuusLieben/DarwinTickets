@@ -6,11 +6,14 @@ import com.intellectualcrafters.plot.object.Plot;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.config.Messages;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketData;
+import net.moddedminecraft.mmctickets.data.ticketStatus;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -25,13 +28,9 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
 
 public class open implements CommandExecutor {
 
@@ -49,7 +48,7 @@ public class open implements CommandExecutor {
     }*/
 
     if (src instanceof Player) {
-      Plot plot = null;
+      @Nullable Plot plot = null;
       try {
         Location location =
             new Location(
@@ -71,6 +70,17 @@ public class open implements CommandExecutor {
 
       if (plot != null && !plot.getOwners().contains(player.getUniqueId())) plot = null;
 
+      if(null != plot) {
+
+        Optional<PlotSuspension> suspension = this.plugin.getDataStore().getSuspension(plot);
+        if(suspension.isPresent()) {
+          int[] cooldown = splitToComponentTimes(suspension.get().suspendedTo - System.currentTimeMillis());
+          player.sendMessage(Text.of(TextColors.RED, "You cannot submit this plot for the next " + cooldown[0] + " hours, " + cooldown[1] + " mins and " + cooldown[2] + " secs"));
+          return CommandResult.empty();
+        }
+
+      }
+
       if (Config.server.isEmpty()) {
         throw new CommandException(Messages.getErrorGen("Server name inside config is not set"));
       }
@@ -89,17 +99,17 @@ public class open implements CommandExecutor {
             ticketID++;
           }
           if (ticket.getPlayerUUID().equals(uuid)
-                  && ticket.getStatus() != CLOSED
-                  && ticket.getStatus() != REJECTED
-                  && ticket.getStatus() != APPROVED
+                  && ticket.getStatus() != ticketStatus.CLOSED
+                  && ticket.getStatus() != ticketStatus.REJECTED
+                  && ticket.getStatus() != ticketStatus.APPROVED
           ) {
             totalTickets++;
           }
           if (Config.preventDuplicates) {
             if (ticket.getMessage().equals(message)
-                    && ticket.getStatus() != CLOSED
-                    && ticket.getStatus() != REJECTED
-                    && ticket.getStatus() != APPROVED
+                    && ticket.getStatus() != ticketStatus.CLOSED
+                    && ticket.getStatus() != ticketStatus.REJECTED
+                    && ticket.getStatus() != ticketStatus.APPROVED
                     && ticket.getPlayerUUID().equals(uuid)) {
               duplicate = true;
             }
@@ -141,7 +151,7 @@ public class open implements CommandExecutor {
                           player.getHeadRotation().getX(),
                           player.getHeadRotation().getY(),
                           message,
-                          OPEN,
+                          ticketStatus.OPEN,
                           0,
                           Config.server,
                           null);
@@ -218,7 +228,7 @@ public class open implements CommandExecutor {
                                 0.0,
                                 0.0,
                                 message,
-                                OPEN,
+                                ticketStatus.OPEN,
                                 0,
                                 Config.server,
                                 null));
@@ -241,5 +251,17 @@ public class open implements CommandExecutor {
 
       return CommandResult.success();
     }
+  }
+
+  private static int[] splitToComponentTimes(long longVal) {
+    double totalSeconds = Math.floor(longVal / 1000);
+    int hours = (int) totalSeconds / 3600;
+    int remainder = (int) totalSeconds - hours * 3600;
+    int mins = remainder / 60;
+    remainder -= mins * 60;
+    int secs = remainder;
+
+    int[] ints = {hours , mins , secs};
+    return ints;
   }
 }

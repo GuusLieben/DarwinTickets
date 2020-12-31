@@ -1,15 +1,22 @@
 package net.moddedminecraft.mmctickets.database;
 
 import com.intellectualcrafters.plot.commands.Copy;
+import com.intellectualcrafters.plot.object.Plot;
+import com.intellectualcrafters.plot.object.PlotId;
 import com.zaxxer.hikari.HikariDataSource;
 
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
 import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
+import org.jetbrains.annotations.NonNls;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.world.World;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -19,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +41,7 @@ public final class H2DataStore implements IDataStore {
 	private final Optional<HikariDataSource> dataSource;
 	private final Map<Integer, TicketData> tickets = new ConcurrentHashMap<>();
 	private final Map<Integer, List<TicketComment>> comments = new ConcurrentHashMap<>();
+	private final Map<Integer, PlotSuspension> suspensions = new ConcurrentHashMap<>();
 
 	public H2DataStore ( Main plugin ) {
 		this.plugin = plugin;
@@ -90,12 +99,53 @@ public final class H2DataStore implements IDataStore {
 					+ ");"
 			);
 
+			// plot suspensions
+			connection.createStatement().executeUpdate("CREATE TABLE IF NOT EXISTS " + Config.h2Prefix + "suspensions ("
+					+ " suspensionId INTEGER NOT NULL PRIMARY KEY,"
+					+ " plotX INTEGER NOT NULL,"
+					+ " plotY INTEGER NOT NULL,"
+					+ " worldId VARCHAR(36) NOT NULL,"
+					+ " suspendedTo BIGINT NOT NULL"
+					+ ");"
+			);
+
 			getConnection().commit();
 		} catch (SQLException ex) {
 			plugin.getLogger().error("Unable to create tables", ex);
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public boolean addSuspension(PlotSuspension suspension) {
+		plugin.getLogger().error("NEW ID : " + suspension.suspensionId);
+		this.suspensions.put(suspension.suspensionId, suspension);
+		try (Connection connection = this.getConnection()) {
+			PreparedStatement statement = connection.prepareStatement("INSERT INTO " + Config.h2Prefix + "suspensions VALUES (?, ?, ?, ?, ?);");
+			statement.setLong(1, suspension.suspensionId);
+			statement.setInt(2, suspension.plotX);
+			statement.setInt(3, suspension.plotY);
+			statement.setString(4, suspension.plotWorldId.toString());
+			statement.setLong(5, suspension.suspendedTo);
+			return statement.executeUpdate() > 0;
+		} catch (SQLException ex) {
+			this.plugin.getLogger().error("H2: Error adding suspension", ex);
+		}
+		return false;
+	}
+
+	@Override
+	public boolean removeSuspension(long suspensionId) {
+		this.suspensions.remove(suspensionId);
+		try (Connection connection = this.getConnection()) {
+			PreparedStatement statement = connection.prepareStatement("DELETE FROM " + Config.h2Prefix + "suspensions WHERE suspensionId = ?");
+			statement.setLong(0, suspensionId);
+			return statement.executeUpdate() > 0;
+		} catch (SQLException ex) {
+			this.plugin.getLogger().error("H2: Error removing suspension", ex);
+		}
+		return false;
 	}
 
 	@Override
@@ -132,6 +182,55 @@ public final class H2DataStore implements IDataStore {
 			return ticketList;
 		} catch (SQLException ex) {
 			plugin.getLogger().info("H2: Couldn't read ticketdata from H2 database.", ex);
+			return new ArrayList<>();
+		}
+	}
+
+	@Override
+	public Collection<PlotSuspension> getSuspensions() {
+		return this.suspensions.values();
+	}
+
+	@Override
+	@Nullable
+	public Optional<PlotSuspension> getSuspension(Plot plot) {
+		for (PlotSuspension suspensionsDatum : getSuspensionsData()) {
+			Optional<World> world = Sponge.getServer().getWorld(suspensionsDatum.plotWorldId);
+			if(!world.isPresent())
+				continue;
+
+			@NonNls String worldName = world.get().getName();
+			if(worldName.equals(plot.getWorldName())
+					&& suspensionsDatum.plotX == plot.getId().x
+					&& suspensionsDatum.plotY == plot.getId().y
+					&& suspensionsDatum.suspendedTo > System.currentTimeMillis())
+				return Optional.of(suspensionsDatum);
+		}
+		return Optional.empty();
+	}
+
+	@Override
+	public List<PlotSuspension> getSuspensionsData () {
+		if (!this.suspensions.isEmpty()) return new ArrayList<>(this.suspensions.values());
+
+		List<PlotSuspension> suspensionList = new ArrayList<>();
+
+		try (Connection connection = this.getConnection()) {
+			ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + Config.h2Prefix + "suspensions");
+			while (rs.next()) {
+				PlotSuspension suspensionData = new PlotSuspension(
+						rs.getInt("suspensionId"),
+						rs.getInt("plotX"),
+						rs.getInt("plotY"),
+						UUID.fromString(rs.getString("worldId")),
+						rs.getLong("suspendedTo")
+				);
+				suspensionList.add(suspensionData);
+			}
+			suspensionList.forEach(s -> this.suspensions.put(s.suspensionId, s));
+			return suspensionList;
+		} catch (SQLException ex) {
+			this.plugin.getLogger().info("H2: Couldn't read suspensionData from H2 database.", ex);
 			return new ArrayList<>();
 		}
 	}
