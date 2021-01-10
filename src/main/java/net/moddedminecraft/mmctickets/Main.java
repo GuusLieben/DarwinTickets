@@ -2,6 +2,8 @@ package net.moddedminecraft.mmctickets;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.intellectualcrafters.plot.flag.Flag;
+import com.intellectualcrafters.plot.flag.Flags;
 import com.magitechserver.magibridge.MagiBridge;
 
 import net.moddedminecraft.mmctickets.commands.AddStaff;
@@ -19,6 +21,7 @@ import net.moddedminecraft.mmctickets.commands.staff;
 import net.moddedminecraft.mmctickets.commands.subcommands.readClosed;
 import net.moddedminecraft.mmctickets.commands.subcommands.readHeld;
 import net.moddedminecraft.mmctickets.commands.subcommands.readSelf;
+import net.moddedminecraft.mmctickets.commands.suspend;
 import net.moddedminecraft.mmctickets.commands.teleport;
 import net.moddedminecraft.mmctickets.commands.ticket;
 import net.moddedminecraft.mmctickets.commands.unclaim;
@@ -27,13 +30,18 @@ import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.PlayerData.PlayerDataSerializer;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.TicketData.TicketSerializer;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
+import net.moddedminecraft.mmctickets.data.PlotSuspension.PlotSuspensionSerializer;
+import net.moddedminecraft.mmctickets.data.ticketStatus;
 import net.moddedminecraft.mmctickets.database.DataStoreManager;
 import net.moddedminecraft.mmctickets.database.IDataStore;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandManager;
@@ -59,10 +67,6 @@ import java.util.concurrent.TimeUnit;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-
 @Plugin (
 		id = "mmctickets",
 		name = "MMCTickets",
@@ -86,8 +90,10 @@ public class Main {
 
 	private CommandManager cmdManager = Sponge.getCommandManager();
 
+
 	private ArrayList<String> waitTimer;
 	private DataStoreManager dataStoreManager;
+	private PlotFlagManager plotFlagManager;
 
 	public static Main INSTANCE;
 
@@ -102,6 +108,8 @@ public class Main {
 				.registerType(TypeToken.of(TicketData.class), new TicketSerializer());
 		TypeSerializers.getDefaultSerializers()
 				.registerType(TypeToken.of(PlayerData.class), new PlayerDataSerializer());
+		TypeSerializers.getDefaultSerializers()
+				.registerType(TypeToken.of(PlotSuspension.class), new PlotSuspensionSerializer());
 
 		config = new Config(this);
 		messages = new Messages(this);
@@ -118,12 +126,20 @@ public class Main {
 		}
 	}
 
+	public PlotFlagManager getPlotFlagManager() {
+		return this.plotFlagManager;
+	}
+
 	@Listener
 	public void onServerStart ( GameStartedServerEvent event ) {
+		this.plotFlagManager = new PlotFlagManager(this);
+		this.plotFlagManager.init();
+
 		getLogger().info("MMCTickets Loaded");
 		getLogger().info("Tickets loaded: " + getDataStore().getTicketData().size());
 		getLogger().info("Notifications loaded: " + getDataStore().getNotifications().size());
 		getLogger().info("PlayerData loaded: " + getDataStore().getPlayerData().size());
+		getLogger().info("PlotSuspensions loaded: " + getDataStore().getSuspensions().size());
 
 		EventListener el = new EventListener(this);
 		Sponge.getEventManager().registerListeners(this, el);
@@ -336,10 +352,20 @@ public class Main {
 						.child(addStaff, "add")
 						.build();
 
+		// plot suspend
+		CommandSpec plotSuspend =
+				CommandSpec.builder()
+						.description(Text.of("Suspend a plot from submission"))
+						.executor(new suspend(this))
+						.arguments(GenericArguments.string(Text.of("time")))
+						.permission(Permissions.COMMAND_PLOT_SUSPEND)
+						.build();
+
 		cmdManager.register(this, ticketOpen, "modreq");
 		cmdManager.register(this, ticketRead, "check");
 		cmdManager.register(this, ticketBase, "ticket");
 		cmdManager.register(this, staffList, "stafflist");
+		cmdManager.register(this, plotSuspend, "suspend");
 	}
 
 	public Logger getLogger () {
@@ -363,10 +389,10 @@ public class Main {
 									int openTickets = 0;
 									int heldTickets = 0;
 									for (TicketData ticket : tickets) {
-										if (ticket.getStatus() == OPEN || ticket.getStatus() == CLAIMED) {
+										if (ticket.getStatus() == ticketStatus.OPEN || ticket.getStatus() == ticketStatus.CLAIMED) {
 											openTickets++;
 										}
-										if (ticket.getStatus() == HELD) {
+										if (ticket.getStatus() == ticketStatus.HELD) {
 											heldTickets++;
 										}
 									}
@@ -410,7 +436,7 @@ public class Main {
 	}
 
 	@Deprecated
-	public TicketData getTicket ( int ticketID ) {
+	public @Nullable TicketData getTicket (int ticketID ) {
 		if (getDataStore().getTicket(ticketID).isPresent()) {
 			return getDataStore().getTicket(ticketID).get();
 		}

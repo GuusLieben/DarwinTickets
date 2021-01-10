@@ -11,7 +11,8 @@ public enum ticketStatus {
 	HELD("Held", Color.PINK),
 	CLOSED("Legacy Closed", Color.BLACK),
 	REJECTED("Rejected", Color.RED),
-	APPROVED("Approved", Color.GREEN);
+	APPROVED("Approved", Color.GREEN),
+	SUSPENDED("SUSPENDED", Color.ORANGE);
 
 	private String status;
 	private Color color;

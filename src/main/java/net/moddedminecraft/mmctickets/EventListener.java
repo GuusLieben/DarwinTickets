@@ -1,15 +1,19 @@
 package net.moddedminecraft.mmctickets;
 
+import com.intellectualcrafters.plot.object.Plot;
 import com.magitechserver.magibridge.MagiBridge;
 import java.awt.Color;
+import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.plotsquared.sponge.events.PlayerEnterPlotEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -17,16 +21,23 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.moddedminecraft.mmctickets.config.Messages;
 import net.moddedminecraft.mmctickets.config.Permissions;
 import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
+import net.moddedminecraft.mmctickets.database.DataStoreManager;
+import net.moddedminecraft.mmctickets.database.IDataStore;
 import net.moddedminecraft.mmctickets.util.CommonUtil;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.world.World;
 
 import javax.annotation.Nonnull;
+import javax.swing.text.html.Option;
 
 public class EventListener extends ListenerAdapter {
 
@@ -124,7 +135,7 @@ public class EventListener extends ListenerAdapter {
 					.getTextChannelById("466934478519140372")
 					.sendMessage(message + "\n\n@everyone")
 					.queue();
-		} else if (event.getChannel().getId().equals("525424273318215681")) {
+		} else if (event.getChannel().getId().equals("742789616066625547")) {
 			if (event.getMessage().getContentRaw().startsWith(".check")) {
 				String command = event.getMessage().getContentRaw();
 				if (command.split(" ").length == 2) {
@@ -183,12 +194,12 @@ public class EventListener extends ListenerAdapter {
 
 						message.setEmbed(embed.build());
 						MagiBridge.jda
-								.getTextChannelById("525424273318215681")
+								.getTextChannelById("742789616066625547")
 								.sendMessage(message.build())
 								.queue();
 					} else {
 						MagiBridge.jda
-								.getTextChannelById("525424273318215681")
+								.getTextChannelById("742789616066625547")
 								.sendMessage(":no_entry: **Unable to find ticket**")
 								.queue();
 					}
@@ -228,7 +239,7 @@ public class EventListener extends ListenerAdapter {
 					embed.setTitle("Open tickets (" + amount.get() + ")");
 					message.setEmbed(embed.build());
 					MagiBridge.jda
-							.getTextChannelById("525424273318215681")
+							.getTextChannelById("742789616066625547")
 							.sendMessage(message.build())
 							.queue();
 				}
@@ -236,4 +247,55 @@ public class EventListener extends ListenerAdapter {
 		}
 
 	}
+
+	@Listener
+	public void onPlotJoin(PlayerEnterPlotEvent event) {
+		Player player = event.getPlayer();
+		Plot plot = event.getPlot();
+
+		// Check if the plot disabled suspension notifications
+		if(!plot.getFlag(this.plugin.getPlotFlagManager().SUSPENSION_FLAG, true))
+			return;
+
+		// Trigger only for the owners of the plot
+		if(!plot.getOwners().contains(player.getUniqueId()))
+			return;
+
+		// Check if the player has a world id
+		Optional<UUID> worldId = player.getWorldUniqueId();
+		if(!worldId.isPresent())
+			return;
+
+		List<PlotSuspension> suspensions = new ArrayList<>(this.plugin.getDataStore().getSuspensionsData());
+		Collections.sort(suspensions);
+		Collections.reverse(suspensions);
+
+		Optional<PlotSuspension> suspension = suspensions
+				.stream()
+				.filter(x -> x.plotWorldId == worldId.get()
+						&& x.plotX == plot.getId().x
+						&& x.plotY == plot.getId().y
+						&& x.suspendedTo > System.currentTimeMillis())
+				.findFirst();
+
+		if(!suspension.isPresent())
+			return;
+
+		int[] cooldown = splitToComponentTimes(suspension.get().suspendedTo - System.currentTimeMillis());
+		player.sendMessage(Text.of(TextColors.YELLOW, "You cannot submit this plot for the next : " + cooldown[0] + " hours, " + cooldown[1] + " mins and " + cooldown[2] + " secs"));
+	}
+
+	private static int[] splitToComponentTimes(long longVal)
+	{
+		double totalSeconds = Math.floor(longVal / 1000);
+		int hours = (int) totalSeconds / 3600;
+		int remainder = (int) totalSeconds - hours * 3600;
+		int mins = remainder / 60;
+		remainder -= mins * 60;
+		int secs = remainder;
+
+		int[] ints = {hours , mins , secs};
+		return ints;
+	}
+
 }

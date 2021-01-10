@@ -1,5 +1,7 @@
 package net.moddedminecraft.mmctickets.database;
 
+import com.intellectualcrafters.plot.object.Plot;
+import com.intellectualcrafters.plot.object.PlotId;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -7,12 +9,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.config.Config;
+import org.jetbrains.annotations.Nullable;
 import net.moddedminecraft.mmctickets.data.PlayerData;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
@@ -106,6 +112,21 @@ public final class MYSQLDataStore implements IDataStore {
 	}
 
 	@Override
+	public Collection<PlotSuspension> getSuspensions() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Optional<PlotSuspension> getSuspension(Plot plot) {
+		return Optional.empty();
+	}
+
+	@Override
+	public @Nullable List<PlotSuspension> getSuspensionsData() {
+		return null;
+	}
+
+	@Override
 	public List<PlayerData> getPlayerData () {
 		List<PlayerData> playerList = new ArrayList<>();
 
@@ -150,6 +171,16 @@ public final class MYSQLDataStore implements IDataStore {
 			}
 		}
 		return Optional.empty();
+	}
+
+	@Override
+	public boolean addSuspension(PlotSuspension suspension) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean removeSuspension(long suspensionId) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -238,7 +269,7 @@ public final class MYSQLDataStore implements IDataStore {
 	}
 
 	@Override
-	public List<TicketComment> getComments(String plotMessage, UUID player) {
+	public @Nullable List<TicketComment> getComments(String plotMessage, UUID player) {
 		return null;
 	}
 

@@ -8,23 +8,29 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.moddedminecraft.mmctickets.Main;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.ticketStatus;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandArgs;
+import org.spongepowered.api.world.World;
 
 import java.awt.Color;
+import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class DiscordUtil {
 
     private static Main plugin = null;
-    private static final String channelId = "525424284731047946";
+    private static final String channelId = "742789616066625547";
 
     public static void setPlugin(Main plugin) {
         DiscordUtil.plugin = plugin;
@@ -48,7 +54,8 @@ public class DiscordUtil {
         CLAIMED("https://webstockreview.net/images/green-clipart-magnifying-glass.png", "Submission claimed"),
         REJECTED("https://app.buildersrefuge.com/img/rejected.png", "Submission rejected"),
         APPROVED("https://app.buildersrefuge.com/img/approved.png", "Submission approved"),
-        HOLD("https://icon-library.net/images/stop-sign-icon-png/stop-sign-icon-png-8.jpg", "Submission on hold");
+        HOLD("https://icon-library.net/images/stop-sign-icon-png/stop-sign-icon-png-8.jpg", "Submission on hold"),
+        SUSPENDED("https://icon-library.net/images/stop-sign-icon-png/stop-sign-icon-png-8.jpg", "Plot suspended");
 
         String imageUrl;
         String title;
@@ -102,10 +109,37 @@ public class DiscordUtil {
 //        if (handler != null)
 //            embedBuilder.addField("Handled by", ticketData.getAdditionalStaff().replaceAll(",", ", "), false);
 
-        if (handler != null)
+//        if (handler != null)
             embedBuilder.addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
 
         return embedBuilder.build();
+    }
+
+    public static void sendSuspension(String suspendedBy, PlotSuspension suspension) {
+        TextChannel channel = MagiBridge.jda.getTextChannelById(channelId);
+
+        Optional<World> world = Sponge.getServer().getWorld(suspension.plotWorldId);
+        String worldName = world.map(World::getName).orElse("Unknown");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm");
+        Date resultDate = new Date(suspension.suspendedTo);
+
+
+        MessageEmbed embeded = new EmbedBuilder()
+                .setTitle(DiscordTicketStatus.SUSPENDED.title)
+                .setDescription("Suspended by : " + suspendedBy)
+                .setColor(Color.ORANGE)
+                .setTimestamp(OffsetDateTime.now())
+                .setFooter("ID #" + suspension.suspensionId, null)
+                .setThumbnail(DiscordTicketStatus.SUSPENDED.imageUrl)
+                .addField("World", worldName, true)
+                .addField("Plot", suspension.plotX + ";" + suspension.plotY, true)
+                .addField("Suspended until", sdf.format(resultDate), true)
+                .build();
+
+
+        if(channel != null)
+            channel.sendMessage(embeded).queue();
     }
 
 }
