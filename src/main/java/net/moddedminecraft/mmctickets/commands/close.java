@@ -109,6 +109,7 @@ public class close implements CommandExecutor {
             case "Plots1":
               rank = "Member";
               break;
+            case "Plots2B":
             case "Plots2":
               rank = "Expert";
               break;

@@ -162,6 +162,7 @@ public class read implements CommandExecutor {
                                     boolean showClaim = false;
 
                                     if (ticket.getWorld().equals("Plots2")) {
+                                    if (ticket.getWorld().equals("Plots2") || ticket.getWorld().equals("Plots2B")) {
                                         if (src.hasPermission(Permissions.COMMAND_TICKET_CLAIM_EXPERT))
                                             showClaim = true;
                                     } else if (ticket.getWorld().equals("MasterPlots")) {
@@ -253,6 +254,7 @@ public class read implements CommandExecutor {
                                                         .onClick(TextActions.runCommand("/multi ticket complete " + ticket.getTicketID() + "|promote " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " Member"))
                                                         .build());
                                             } else if (ticket.getWorld().equals("Plots2")) {
+                                            } else if (ticket.getWorld().equals("Plots2") || ticket.getWorld().equals("Plots2B")) {
                                                 promotionActions.append(Text.builder()
                                                         .append(Text.of(TextColors.AQUA, "[", TextColors.YELLOW, "Promote - Expert", TextColors.AQUA, "]"))
                                                         .onHover(TextActions.showText(Text.of(TextColors.AQUA, "Promote to Expert and close ticket")))
