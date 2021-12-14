@@ -4,7 +4,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 
@@ -35,3 +34,4 @@ buildNumber.properties
 
 # MacOS
 .DS_Store
+bak
