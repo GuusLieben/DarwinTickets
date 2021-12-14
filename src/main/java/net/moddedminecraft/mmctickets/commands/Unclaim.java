@@ -25,18 +25,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.REJECTED;
 
-public class unclaim implements CommandExecutor {
+public class Unclaim implements CommandExecutor {
 
 	private final Main plugin;
 
-	public unclaim ( Main plugin ) {
+	public Unclaim(Main plugin ) {
 		this.plugin = plugin;
 	}
 
@@ -99,7 +99,7 @@ public class unclaim implements CommandExecutor {
 							Messages.getTicketUnclaim(src.getName(), ticket.getTicketID()));
 					Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
 					Plot plot = Plot.getPlot(location);
-					DiscordUtil.editMessage(ticket.getDiscordMessage(), ticket.getStatus().getAssociatedColor(), CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.NEW, plot);
+					DiscordUtil.editMessage(ticket.getDiscordMessage(), ticket.getStatus().getAssociatedColor(), CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), ticket, DiscordTicketStatus.NEW, plot);
 					return CommandResult.success();
 				}
 			}

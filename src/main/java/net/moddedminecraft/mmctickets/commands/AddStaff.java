@@ -10,6 +10,7 @@ import net.moddedminecraft.mmctickets.util.CommonUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
 import net.moddedminecraft.mmctickets.util.DiscordUtil.DiscordTicketStatus;
 
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -35,7 +36,7 @@ public class AddStaff implements CommandExecutor {
     }
 
     @Override
-    public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
+    public @NotNull CommandResult execute(@NotNull CommandSource src, CommandContext args) throws CommandException {
         final int ticketID = args.<Integer>getOne("ticketID").get();
         final User user = args.<Player>getOne("player").get();
 
@@ -58,10 +59,11 @@ public class AddStaff implements CommandExecutor {
 
                     Location location = new Location(ticket.getWorld(), ticket.getX(), ticket.getY(), ticket.getZ());
                     Plot plot = Plot.getPlot(location);
-                    DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), src, ticket, DiscordTicketStatus.CLAIMED, plot);
+                    DiscordUtil.editMessage(ticket.getDiscordMessage(), Color.GREEN, CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()), ticket, DiscordTicketStatus.CLAIMED, plot);
                 }
             }
-        } else {
+        }
+        else {
             src.sendMessage(Text.of(TextColors.GRAY, "[] ", TextColors.RED, "That player is not a reviewer!"));
         }
 

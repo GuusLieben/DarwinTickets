@@ -11,11 +11,9 @@ import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
-import net.moddedminecraft.mmctickets.data.ticketStatus;
+import net.moddedminecraft.mmctickets.data.TicketStatus;
 
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.command.args.CommandArgs;
 import org.spongepowered.api.world.World;
 
 import java.awt.Color;
@@ -30,13 +28,13 @@ import java.util.function.Consumer;
 public class DiscordUtil {
 
     private static Main plugin = null;
-    private static final String channelId = "742789616066625547";
+    public static final String channelId = "525424284731047946";
 
     public static void setPlugin(Main plugin) {
         DiscordUtil.plugin = plugin;
     }
 
-    public static DiscordTicketStatus convertStatus(ticketStatus status) {
+    public static DiscordTicketStatus convertStatus(TicketStatus status) {
         switch (status) {
             case CLOSED:
                 return DiscordTicketStatus.REJECTED;
@@ -66,22 +64,22 @@ public class DiscordUtil {
         }
     }
 
-    public static void sendToChannel(Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot, Consumer<Message> consumer) {
+    public static void sendToChannel(Color color, String submitter, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot, Consumer<Message> consumer) {
         TextChannel channel = MagiBridge.jda.getTextChannelById(channelId);
 
-        if(channel != null)
-            channel.sendMessage(getEmbed(color, submitter, handler, ticketData, ticketStatus, plot)).queue(consumer);
+        if (channel != null)
+            channel.sendMessage(getEmbed(color, submitter, ticketData, ticketStatus, plot)).queue(consumer);
     }
 
-    public static void editMessage(String messageId, Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
+    public static void editMessage(String messageId, Color color, String submitter, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
         TextChannel channel = MagiBridge.jda.getTextChannelById(channelId);
         channel.retrieveMessageById(messageId).queue(msg ->
-                msg.editMessage(getEmbed(color, submitter, handler, ticketData, ticketStatus, plot)).queue()
+                msg.editMessage(getEmbed(color, submitter, ticketData, ticketStatus, plot)).queue()
         );
     }
 
-    private static MessageEmbed getEmbed(Color color, String submitter, CommandSource handler, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
-        final List<TicketData> tickets = new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
+    private static MessageEmbed getEmbed(Color color, String submitter, TicketData ticketData, DiscordTicketStatus ticketStatus, Plot plot) {
+        final List<TicketData> tickets = new ArrayList<>(plugin.getDataStore().getTicketData());
         int ticketNum = (int) tickets.stream().filter(t -> t.getPlayerUUID().equals(ticketData.getPlayerUUID()) && t.getMessage().equals(ticketData.getMessage())).count();
 
         List<TicketComment> comments = plugin.getDataStore().getComments(ticketData.getMessage(), ticketData.getPlayerUUID());
@@ -106,11 +104,7 @@ public class DiscordUtil {
                 .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
                 .addField("Comment(s)", comment, true);
 
-//        if (handler != null)
-//            embedBuilder.addField("Handled by", ticketData.getAdditionalStaff().replaceAll(",", ", "), false);
-
-//        if (handler != null)
-            embedBuilder.addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
+        embedBuilder.addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
 
         return embedBuilder.build();
     }
@@ -138,7 +132,7 @@ public class DiscordUtil {
                 .build();
 
 
-        if(channel != null)
+        if (channel != null)
             channel.sendMessage(embeded).queue();
     }
 

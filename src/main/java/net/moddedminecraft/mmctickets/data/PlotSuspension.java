@@ -1,15 +1,15 @@
 package net.moddedminecraft.mmctickets.data;
 
 import com.google.common.reflect.TypeToken;
-import net.moddedminecraft.mmctickets.util.PlayerDataUtil;
+
 import net.moddedminecraft.mmctickets.util.PlotSuspensionUtil;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.UUID;
+
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
 
 public class PlotSuspension extends PlotSuspensionUtil implements Comparable<PlotSuspension> {
 
@@ -23,12 +23,9 @@ public class PlotSuspension extends PlotSuspensionUtil implements Comparable<Plo
     }
 
     public static class PlotSuspensionSerializer implements TypeSerializer<PlotSuspension> {
-        @SuppressWarnings ("serial")
-        final public static TypeToken<List<PlotSuspension>> token = new TypeToken<List<PlotSuspension>>() {
-        };
 
         @Override
-        public PlotSuspension deserialize ( TypeToken<?> token, ConfigurationNode node ) throws ObjectMappingException {
+        public PlotSuspension deserialize(@NotNull TypeToken<?> token, ConfigurationNode node) {
             return new PlotSuspension(
                     node.getNode("suspensionId").getInt(),
                     node.getNode("plotX").getInt(),
@@ -38,7 +35,7 @@ public class PlotSuspension extends PlotSuspensionUtil implements Comparable<Plo
         }
 
         @Override
-        public void serialize (TypeToken<?> token, PlotSuspension plot, ConfigurationNode node ) throws ObjectMappingException {
+        public void serialize(@NotNull TypeToken<?> token, PlotSuspension plot, ConfigurationNode node) {
             node.getNode("suspensionId").setValue(plot.suspensionId);
             node.getNode("plotX").setValue(plot.plotX);
             node.getNode("plotY").setValue(plot.plotY);
@@ -46,7 +43,6 @@ public class PlotSuspension extends PlotSuspensionUtil implements Comparable<Plo
             node.getNode("suspendedTo").setValue(plot.suspendedTo);
         }
     }
-
 
 
 }

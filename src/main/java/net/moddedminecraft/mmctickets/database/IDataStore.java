@@ -1,7 +1,7 @@
 package net.moddedminecraft.mmctickets.database;
 
 import com.intellectualcrafters.plot.object.Plot;
-import com.intellectualcrafters.plot.object.PlotId;
+
 import net.moddedminecraft.mmctickets.data.PlayerData;
 import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
@@ -14,8 +14,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface IDataStore {
-
-	String getDatabaseName ();
 
 	boolean load ();
 
@@ -33,19 +31,13 @@ public interface IDataStore {
 
 	Optional<TicketData> getTicket(int ticketID);
 
-	boolean addSuspension(PlotSuspension suspension);
+	void addSuspension(PlotSuspension suspension);
 
-	boolean removeSuspension(long suspensionId);
-
-	boolean addTicketData(TicketData ticketData);
-
-	boolean addPlayerData(PlayerData playerData);
+	void addTicketData(TicketData ticketData);
 
 	boolean updateTicketData(TicketData ticketData);
 
-	boolean updatePlayerData(PlayerData playerData);
-
-	boolean addComment(TicketData ticket, String comment, String source);
+	void addComment(TicketData ticket, String comment, String source);
 
 	List<TicketComment> getComments(String plotMessage, UUID player);
 }

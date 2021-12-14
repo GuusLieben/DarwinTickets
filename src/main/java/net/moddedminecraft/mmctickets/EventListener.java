@@ -2,8 +2,29 @@ package net.moddedminecraft.mmctickets;
 
 import com.intellectualcrafters.plot.object.Plot;
 import com.magitechserver.magibridge.MagiBridge;
+import com.plotsquared.sponge.events.PlayerEnterPlotEvent;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.moddedminecraft.mmctickets.config.Messages;
+import net.moddedminecraft.mmctickets.config.Permissions;
+import net.moddedminecraft.mmctickets.data.PlotSuspension;
+import net.moddedminecraft.mmctickets.data.TicketData;
+import net.moddedminecraft.mmctickets.data.TicketStatus;
+import net.moddedminecraft.mmctickets.util.CommonUtil;
+import net.moddedminecraft.mmctickets.util.DiscordUtil;
+
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
+
 import java.awt.Color;
-import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,289 +34,228 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.plotsquared.sponge.events.PlayerEnterPlotEvent;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.moddedminecraft.mmctickets.config.Messages;
-import net.moddedminecraft.mmctickets.config.Permissions;
-import net.moddedminecraft.mmctickets.data.PlayerData;
-import net.moddedminecraft.mmctickets.data.PlotSuspension;
-import net.moddedminecraft.mmctickets.data.TicketData;
-import net.moddedminecraft.mmctickets.data.ticketStatus;
-import net.moddedminecraft.mmctickets.database.DataStoreManager;
-import net.moddedminecraft.mmctickets.database.IDataStore;
-import net.moddedminecraft.mmctickets.util.CommonUtil;
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.event.network.ClientConnectionEvent;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.world.World;
-
 import javax.annotation.Nonnull;
-import javax.swing.text.html.Option;
 
 public class EventListener extends ListenerAdapter {
 
-	private Main plugin;
+    private Main plugin;
 
-	public EventListener ( Main instance ) {
-		plugin = instance;
-	}
+    public EventListener(Main instance) {
+        plugin = instance;
+    }
 
-	@Listener
-	public void onPlayerLogin ( ClientConnectionEvent.Join event, @Root Player player ) {
-		// Notify a player if a ticket they created was closed while they were offline
-		if (plugin.getDataStore().getNotifications().contains(player.getUniqueId())) {
-			final List<TicketData> tickets =
-					new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
-			int totalTickets = 0;
-			for (TicketData ticket : tickets) {
-				if (ticket.getPlayerUUID().equals(player.getUniqueId()) && ticket.getNotified() == 0) {
-					totalTickets++;
-					ticket.setNotified(1);
-					try {
-						plugin.getDataStore().updateTicketData(ticket);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			plugin
-					.getDataStore()
-					.getNotifications()
-					.removeAll(Collections.singleton(player.getUniqueId()));
-			final int finalTotalTickets = totalTickets;
-			Sponge.getScheduler()
-					.createTaskBuilder()
-					.execute(
-							new Runnable() {
-								public void run () {
-									if (finalTotalTickets < 2) {
-										player.sendMessage(Messages.getTicketCloseOffline());
-									} else {
-										player.sendMessage(
-												Messages.getTicketCloseOfflineMulti(finalTotalTickets, "check self"));
-									}
-								}
-							})
-					.delay(5, TimeUnit.SECONDS)
-					.name("mmctickets-s-sendUserNotifications")
-					.submit(this.plugin);
-		}
+    @Listener
+    public void onPlayerLogin(ClientConnectionEvent.Join event, @Root Player player) {
+        // Notify a player if a ticket they created was closed while they were offline
+        if (plugin.getDataStore().getNotifications().contains(player.getUniqueId())) {
+            final List<TicketData> tickets =
+                    new ArrayList<>(plugin.getDataStore().getTicketData());
+            int totalTickets = 0;
+            for (TicketData ticket : tickets) {
+                if (ticket.getPlayerUUID().equals(player.getUniqueId()) && ticket.getNotified() == 0) {
+                    totalTickets++;
+                    ticket.setNotified(1);
+                    try {
+                        plugin.getDataStore().updateTicketData(ticket);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            plugin
+                    .getDataStore()
+                    .getNotifications()
+                    .removeAll(Collections.singleton(player.getUniqueId()));
+            final int finalTotalTickets = totalTickets;
+            Sponge.getScheduler()
+                    .createTaskBuilder()
+                    .execute(() -> {
+                        if (finalTotalTickets < 2) {
+                            player.sendMessage(Messages.getTicketCloseOffline());
+                        }
+                        else {
+                            player.sendMessage(
+                                    Messages.getTicketCloseOfflineMulti(finalTotalTickets, "check self"));
+                        }
+                    })
+                    .delay(5, TimeUnit.SECONDS)
+                    .name("mmctickets-s-sendUserNotifications")
+                    .submit(this.plugin);
+        }
 
-		// Notify staff of the current open tickets when they login
-		if (player.hasPermission(Permissions.STAFF)) {
-			final List<TicketData> tickets =
-					new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
-			int openTickets = 0;
-			int heldTickets = 0;
-			for (TicketData ticket : tickets) {
-				if (ticket.getStatus() == ticketStatus.OPEN) openTickets++;
-				if (ticket.getStatus() == ticketStatus.HELD) heldTickets++;
-			}
-			final int finalOpen = openTickets;
-			final int finalHeld = heldTickets;
-			Sponge.getScheduler()
-					.createTaskBuilder()
-					.execute(
-							new Runnable() {
-								public void run () {
+        // Notify staff of the current open tickets when they login
+        if (player.hasPermission(Permissions.STAFF)) {
+            final List<TicketData> tickets = new ArrayList<>(plugin.getDataStore().getTicketData());
+            int openTickets = 0;
+            int heldTickets = 0;
+            for (TicketData ticket : tickets) {
+                if (ticket.getStatus() == TicketStatus.OPEN) openTickets++;
+                if (ticket.getStatus() == TicketStatus.HELD) heldTickets++;
+            }
+            final int finalOpen = openTickets;
+            final int finalHeld = heldTickets;
+            Sponge.getScheduler()
+                    .createTaskBuilder()
+                    .execute(() -> {
+                        if (finalOpen == 0) {
+                            player.sendMessage(Messages.getTicketReadNone());
+                        }
+                        if (finalOpen > 0 && finalHeld == 0) {
+                            player.sendMessage(Messages.getTicketUnresolved(finalOpen, "check"));
+                        }
+                        if (finalOpen > 0 && finalHeld > 0) {
+                            player.sendMessage(
+                                    Messages.getTicketUnresolvedHeld(finalOpen, finalHeld, "check"));
+                        }
+                    })
+                    .delay(3, TimeUnit.SECONDS)
+                    .name("mmctickets-s-sendStaffNotifications")
+                    .submit(this.plugin);
+        }
+    }
 
-									if (finalOpen == 0) {
-										player.sendMessage(Messages.getTicketReadNone());
-									}
-									if (finalOpen > 0 && finalHeld == 0) {
-										player.sendMessage(Messages.getTicketUnresolved(finalOpen, "check"));
-									}
-									if (finalOpen > 0 && finalHeld > 0) {
-										player.sendMessage(
-												Messages.getTicketUnresolvedHeld(finalOpen, finalHeld, "check"));
-									}
-								}
-							})
-					.delay(3, TimeUnit.SECONDS)
-					.name("mmctickets-s-sendStaffNotifications")
-					.submit(this.plugin);
-		}
-	}
+    @Override
+    public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+        if (event.getChannel().getId().equals(DiscordUtil.channelId)) {
+            if (event.getMessage().getContentRaw().startsWith(".check")) {
+                String command = event.getMessage().getContentRaw();
+                final List<TicketData> tickets = new ArrayList<>(plugin.getDataStore().getTicketData());
+                if (command.split(" ").length == 2) {
+                    String id = command.split(" ")[1];
+                    int ticketId = Integer.parseInt(id);
+                    Optional<TicketData> optionalTicket =
+                            tickets.stream().filter(ticket -> ticket.getTicketID() == ticketId).findFirst();
+                    if (optionalTicket.isPresent()) {
+                        TicketData ticketData = optionalTicket.get();
+                        MessageBuilder message = new MessageBuilder();
+                        EmbedBuilder embed = new EmbedBuilder();
 
-	@Override
-	public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+                        String body = "";
+                        String playerName =
+                                CommonUtil.getPlayerNameFromData(plugin, ticketData.getPlayerUUID());
+                        String age = CommonUtil.getTimeAgo(ticketData.getTimestamp());
+                        String location =
+                                ticketData.getWorld()
+                                        + " | x: "
+                                        + ticketData.getX()
+                                        + ", y: "
+                                        + ticketData.getY()
+                                        + ", z: "
+                                        + ticketData.getZ();
 
-		if (event.getChannel().getId().equals("525424009978970112")
-				&& event.getAuthor().getId().equals("151771899985264640")
-				&& event.getMessage().getContentRaw().startsWith("[#]")) {
-			String message = event.getMessage().getContentRaw().replace("[#]", "");
-			MagiBridge.jda
-					.getTextChannelById("466934478519140372")
-					.sendMessage(message + "\n\n@everyone")
-					.queue();
-		} else if (event.getChannel().getId().equals("742789616066625547")) {
-			if (event.getMessage().getContentRaw().startsWith(".check")) {
-				String command = event.getMessage().getContentRaw();
-				if (command.split(" ").length == 2) {
-					final List<TicketData> tickets =
-							new ArrayList<TicketData>(plugin.getDataStore().getTicketData());
-					String id = command.split(" ")[1];
-					int ticketId = Integer.parseInt(id);
-					Optional<TicketData> optionalTicket =
-							tickets.stream().filter(ticket -> ticket.getTicketID() == ticketId).findFirst();
-					if (optionalTicket.isPresent()) {
-						TicketData ticketData = optionalTicket.get();
-						MessageBuilder message = new MessageBuilder();
-						EmbedBuilder embed = new EmbedBuilder();
+                        int ticketNum = (int) tickets.stream().filter(t -> t.getPlayerUUID()
+                                .toString()
+                                .equals(ticketData.getPlayerUUID().toString())
+                                && t.getMessage().equals(ticketData.getMessage())
+                        ).count();
 
-						String body = "";
-						String playerName =
-								CommonUtil.getPlayerNameFromData(plugin, ticketData.getPlayerUUID());
-						String age = CommonUtil.getTimeAgo(ticketData.getTimestamp());
-						String location =
-								ticketData.getWorld()
-										+ " | x: "
-										+ ticketData.getX()
-										+ ", y: "
-										+ ticketData.getY()
-										+ ", z: "
-										+ ticketData.getZ();
+                        for (String regex : new String[]{ "(&)([a-f])+", "(&)([0-9])+", "&l", "&n", "&o", "&k", "&m", "&r" })
+                            age = age.replaceAll(regex, "");
 
-						int ticketNum =
-								(int)
-										tickets.stream()
-												.filter(
-														t ->
-																t.getPlayerUUID()
-																		.toString()
-																		.equals(ticketData.getPlayerUUID().toString())
-																		&& t.getMessage().equals(ticketData.getMessage()))
-												.count();
+                        body += "Player : " + playerName;
+                        body += "\nSubmitted : " + age;
+                        body += "\nLocation : " + location;
+                        body += "\nPlot : " + ticketData.getMessage();
+                        body += "\nSubmission : #" + ticketNum;
+                        body += "\nComments/score : " + (ticketData.getComment().length() == 0 ? "None" : ticketData.getComment());
 
-						for (String regex :
-								new String[] { "(&)([a-f])+", "(&)([0-9])+", "&l", "&n", "&o", "&k", "&m", "&r" })
-							age = age.replaceAll(regex, "");
+                        embed.setColor(Color.CYAN);
 
-						body += "Player : " + playerName;
-						body += "\nSubmitted : " + age;
-						body += "\nLocation : " + location;
-						body += "\nPlot : " + ticketData.getMessage();
-						body += "\nSubmission : #" + ticketNum;
-						body +=
-								"\nComments/score : "
-										+ (ticketData.getComment().length() == 0 ? "None" : ticketData.getComment());
+                        embed.setTitle("Ticket : #" + ticketData.getTicketID());
+                        embed.addField("", body, true);
 
-						embed.setColor(Color.CYAN);
+                        message.setEmbed(embed.build());
+                        MagiBridge.jda.getTextChannelById(DiscordUtil.channelId).sendMessage(message.build()).queue();
+                    }
+                    else {
+                        MagiBridge.jda.getTextChannelById(DiscordUtil.channelId).sendMessage(":no_entry: **Unable to find ticket**").queue();
+                    }
+                }
+                else {
+                    MessageBuilder message = new MessageBuilder();
+                    EmbedBuilder embed = new EmbedBuilder();
+                    AtomicInteger amount = new AtomicInteger();
+                    tickets.stream()
+                            .filter(t -> t.getStatus().equals(TicketStatus.OPEN))
+                            .forEach(ticket -> {
+                                amount.getAndIncrement();
+                                String playerName =
+                                        CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID());
+                                String age = CommonUtil.getTimeAgo(ticket.getTimestamp());
 
-						embed.setTitle("Ticket : #" + ticketData.getTicketID());
-						embed.addField("", body, true);
+                                String title =
+                                        MessageFormat.format(
+                                                "#{0} | {1}", ticket.getTicketID(), ticket.getMessage());
 
-						message.setEmbed(embed.build());
-						MagiBridge.jda
-								.getTextChannelById("742789616066625547")
-								.sendMessage(message.build())
-								.queue();
-					} else {
-						MagiBridge.jda
-								.getTextChannelById("742789616066625547")
-								.sendMessage(":no_entry: **Unable to find ticket**")
-								.queue();
-					}
-				} else {
-					final List<TicketData> tickets = new ArrayList<>(plugin.getDataStore().getTicketData());
-					MessageBuilder message = new MessageBuilder();
-					EmbedBuilder embed = new EmbedBuilder();
-					AtomicInteger amount = new AtomicInteger();
-					tickets.stream()
-							.filter(t -> t.getStatus().equals(ticketStatus.OPEN))
-							.forEach(
-									ticket -> {
-										amount.getAndIncrement();
-										String playerName =
-												CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID());
-										String age = CommonUtil.getTimeAgo(ticket.getTimestamp());
+                                for (String regex :
+                                        new String[]{
+                                                "(&)([a-f])+", "(&)([0-9])+", "&l", "&n", "&o", "&k", "&m", "&r"
+                                        })
+                                    age = age.replaceAll(regex, "");
 
-										String title =
-												MessageFormat.format(
-														"#{0} | {1}", ticket.getTicketID(), ticket.getMessage());
+                                String body =
+                                        MessageFormat.format("By : {0}\nSubmitted : {1}", playerName, age);
+                                embed.addField(title, body, true);
+                            });
 
-										for (String regex :
-												new String[] {
-														"(&)([a-f])+", "(&)([0-9])+", "&l", "&n", "&o", "&k", "&m", "&r"
-												})
-											age = age.replaceAll(regex, "");
+                    if (amount.get() <= 3) embed.setColor(Color.CYAN);
+                    else if (amount.get() >= 7) embed.setColor(Color.PINK);
+                    else embed.setColor(Color.YELLOW);
 
-										String body =
-												MessageFormat.format("By : {0}\nSubmitted : {1}", playerName, age);
-										embed.addField(title, body, true);
-									});
+                    embed.setTitle("Open tickets (" + amount.get() + ")");
+                    message.setEmbed(embed.build());
+                    MagiBridge.jda.getTextChannelById(DiscordUtil.channelId).sendMessage(message.build()).queue();
+                }
+            }
+        }
+    }
 
-					if (amount.get() <= 3) embed.setColor(Color.CYAN);
-					else if (amount.get() >= 7) embed.setColor(Color.PINK);
-					else embed.setColor(Color.YELLOW);
+    @Listener
+    public void onPlotJoin(PlayerEnterPlotEvent event) {
+        Player player = event.getPlayer();
+        Plot plot = event.getPlot();
 
-					embed.setTitle("Open tickets (" + amount.get() + ")");
-					message.setEmbed(embed.build());
-					MagiBridge.jda
-							.getTextChannelById("742789616066625547")
-							.sendMessage(message.build())
-							.queue();
-				}
-			}
-		}
+        // Check if the plot disabled suspension notifications
+        if (!plot.getFlag(this.plugin.getPlotFlagManager().SUSPENSION_FLAG, true))
+            return;
 
-	}
+        // Trigger only for the owners of the plot
+        if (!plot.getOwners().contains(player.getUniqueId()))
+            return;
 
-	@Listener
-	public void onPlotJoin(PlayerEnterPlotEvent event) {
-		Player player = event.getPlayer();
-		Plot plot = event.getPlot();
+        // Check if the player has a world id
+        Optional<UUID> worldId = player.getWorldUniqueId();
+        if (!worldId.isPresent())
+            return;
 
-		// Check if the plot disabled suspension notifications
-		if(!plot.getFlag(this.plugin.getPlotFlagManager().SUSPENSION_FLAG, true))
-			return;
+        List<PlotSuspension> suspensions = new ArrayList<>(this.plugin.getDataStore().getSuspensionsData());
+        Collections.sort(suspensions);
+        Collections.reverse(suspensions);
 
-		// Trigger only for the owners of the plot
-		if(!plot.getOwners().contains(player.getUniqueId()))
-			return;
+        Optional<PlotSuspension> suspension = suspensions
+                .stream()
+                .filter(x -> x.plotWorldId == worldId.get()
+                        && x.plotX == plot.getId().x
+                        && x.plotY == plot.getId().y
+                        && x.suspendedTo > System.currentTimeMillis())
+                .findFirst();
 
-		// Check if the player has a world id
-		Optional<UUID> worldId = player.getWorldUniqueId();
-		if(!worldId.isPresent())
-			return;
+        if (!suspension.isPresent()) return;
 
-		List<PlotSuspension> suspensions = new ArrayList<>(this.plugin.getDataStore().getSuspensionsData());
-		Collections.sort(suspensions);
-		Collections.reverse(suspensions);
+        int[] cooldown = splitToComponentTimes(suspension.get().suspendedTo - System.currentTimeMillis());
+        player.sendMessage(Text.of(TextColors.YELLOW, "You cannot submit this plot for the next : " + cooldown[0] + " hours, " + cooldown[1] + " mins and " + cooldown[2] + " secs"));
+    }
 
-		Optional<PlotSuspension> suspension = suspensions
-				.stream()
-				.filter(x -> x.plotWorldId == worldId.get()
-						&& x.plotX == plot.getId().x
-						&& x.plotY == plot.getId().y
-						&& x.suspendedTo > System.currentTimeMillis())
-				.findFirst();
+    private static int[] splitToComponentTimes(long longVal) {
+        double totalSeconds = Math.floor(longVal / 1000);
+        int hours = (int) totalSeconds / 3600;
+        int remainder = (int) totalSeconds - hours * 3600;
+        int mins = remainder / 60;
+        remainder -= mins * 60;
+        int secs = remainder;
 
-		if(!suspension.isPresent())
-			return;
-
-		int[] cooldown = splitToComponentTimes(suspension.get().suspendedTo - System.currentTimeMillis());
-		player.sendMessage(Text.of(TextColors.YELLOW, "You cannot submit this plot for the next : " + cooldown[0] + " hours, " + cooldown[1] + " mins and " + cooldown[2] + " secs"));
-	}
-
-	private static int[] splitToComponentTimes(long longVal)
-	{
-		double totalSeconds = Math.floor(longVal / 1000);
-		int hours = (int) totalSeconds / 3600;
-		int remainder = (int) totalSeconds - hours * 3600;
-		int mins = remainder / 60;
-		remainder -= mins * 60;
-		int secs = remainder;
-
-		int[] ints = {hours , mins , secs};
-		return ints;
-	}
+        return new int[]{ hours, mins, secs };
+    }
 
 }

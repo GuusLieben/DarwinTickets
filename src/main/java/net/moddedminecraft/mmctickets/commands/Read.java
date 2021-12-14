@@ -31,18 +31,19 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static net.moddedminecraft.mmctickets.data.ticketStatus.APPROVED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLAIMED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.CLOSED;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.HELD;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.OPEN;
-import static net.moddedminecraft.mmctickets.data.ticketStatus.REJECTED;
+import static net.moddedminecraft.mmctickets.config.Permissions.COMMAND_TICKET_COMMENT;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.APPROVED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.CLAIMED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.CLOSED;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.HELD;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.OPEN;
+import static net.moddedminecraft.mmctickets.data.TicketStatus.REJECTED;
 
-public class read implements CommandExecutor {
+public class Read implements CommandExecutor {
 
     private final Main plugin;
 
-    public read(Main plugin) {
+    public Read(Main plugin) {
         this.plugin = plugin;
     }
 
@@ -61,7 +62,8 @@ public class read implements CommandExecutor {
 
         if (tickets.isEmpty()) {
             throw new CommandException(Messages.getErrorGen("Tickets list is empty."));
-        } else {
+        }
+        else {
             if (!ticketIDOp.isPresent()) {
                 if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)) {
                     PaginationService paginationService =
@@ -127,15 +129,18 @@ public class read implements CommandExecutor {
                             .linesPerPage(ticketsPer + 2)
                             .sendTo(src);
                     return CommandResult.success();
-                } else {
+                }
+                else {
                     if (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF)) {
                         throw new CommandException(Messages.getErrorIncorrectUsage("/check self or /check #"));
-                    } else {
+                    }
+                    else {
                         throw new CommandException(
                                 Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_ALL));
                     }
                 }
-            } else {
+            }
+            else {
                 if (src.hasPermission(Permissions.COMMAND_TICKET_READ_ALL)
                         || (src.hasPermission(Permissions.COMMAND_TICKET_READ_SELF))) {
                     PaginationService paginationService =
@@ -161,14 +166,15 @@ public class read implements CommandExecutor {
 
                                     boolean showClaim = false;
 
-                                    if (ticket.getWorld().equals("Plots2")) {
                                     if (ticket.getWorld().equals("Plots2") || ticket.getWorld().equals("Plots2B")) {
                                         if (src.hasPermission(Permissions.COMMAND_TICKET_CLAIM_EXPERT))
                                             showClaim = true;
-                                    } else if (ticket.getWorld().equals("MasterPlots")) {
+                                    }
+                                    else if (ticket.getWorld().equals("MasterPlots")) {
                                         if (src.hasPermission(Permissions.COMMAND_TICKET_CLAIM_MASTER))
                                             showClaim = true;
-                                    } else showClaim = true;
+                                    }
+                                    else showClaim = true;
 
                                     if (showClaim) {
                                         action.append(
@@ -222,7 +228,7 @@ public class read implements CommandExecutor {
                                     action.append(plugin.fromLegacy(" "));
                                 }
                             }
-                            if (src.hasPermission(Permissions.COMMAND_TICKET_COMMENT)) {
+                            if (src.hasPermission(COMMAND_TICKET_COMMENT)) {
                                 if (ticket.getStatus() != CLAIMED
                                         || ticket.getStatus() == CLAIMED && ticket.getStaffUUID().equals(uuid)) {
                                     action.append(Text.builder()
@@ -253,14 +259,15 @@ public class read implements CommandExecutor {
                                                         .onHover(TextActions.showText(Text.of(TextColors.AQUA, "Promote to Member and close ticket")))
                                                         .onClick(TextActions.runCommand("/multi ticket complete " + ticket.getTicketID() + "|promote " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " Member"))
                                                         .build());
-                                            } else if (ticket.getWorld().equals("Plots2")) {
-                                            } else if (ticket.getWorld().equals("Plots2") || ticket.getWorld().equals("Plots2B")) {
+                                            }
+                                            else if (ticket.getWorld().equals("Plots2") || ticket.getWorld().equals("Plots2B")) {
                                                 promotionActions.append(Text.builder()
                                                         .append(Text.of(TextColors.AQUA, "[", TextColors.YELLOW, "Promote - Expert", TextColors.AQUA, "]"))
                                                         .onHover(TextActions.showText(Text.of(TextColors.AQUA, "Promote to Expert and close ticket")))
                                                         .onClick(TextActions.runCommand("/multi ticket complete " + ticket.getTicketID() + "|promote " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " Expert"))
                                                         .build());
-                                            } else if (ticket.getWorld().equals("MasterPlots")) {
+                                            }
+                                            else if (ticket.getWorld().equals("MasterPlots")) {
                                                 promotionActions.append(Text.NEW_LINE);
                                                 promotionActions.append(Text.builder()
                                                         .append(Text.of(TextColors.AQUA, "[", TextColors.AQUA, "Promote - MS:Nature", TextColors.AQUA, "]"))
@@ -280,7 +287,8 @@ public class read implements CommandExecutor {
                                                         .onClick(TextActions.runCommand("/multi ticket complete " + ticket.getTicketID() + "|master " + CommonUtil.getPlayerNameFromData(plugin, ticket.getPlayerUUID()) + " all"))
                                                         .build());
                                                 promotionActions.append(Text.NEW_LINE);
-                                            } else {
+                                            }
+                                            else {
 
                                             }
                                             promotionActions.append(plugin.fromLegacy(" "));
@@ -347,12 +355,15 @@ public class read implements CommandExecutor {
                                                     "&bHandled by: &7"
                                                             + String.join(", ", ticket.getAdditionalReviewers())));
                             }
-                            List<TicketComment> comments = plugin.getDataStore().getComments(ticket.getMessage(), ticket.getPlayerUUID());
-                            if (!comments.isEmpty()) {
-                                contents.add(plugin.fromLegacy("&bComments: "));
-                                for (TicketComment comment : comments) {
-                                    contents.add(plugin.fromLegacy(" &3[&b#" +comment.getTicketId() + ": " + comment.getSource() + " &3- &b" + CommonUtil.getTimeAgo(comment.getTimestamp().getTime()) + "&3] &7:"));
-                                    contents.add(plugin.fromLegacy("&7 - " + comment.getComment()));
+
+                            if (src.hasPermission(COMMAND_TICKET_COMMENT)) {
+                                List<TicketComment> comments = plugin.getDataStore().getComments(ticket.getMessage(), ticket.getPlayerUUID());
+                                if (!comments.isEmpty()) {
+                                    contents.add(plugin.fromLegacy("&bComments: "));
+                                    for (TicketComment comment : comments) {
+                                        contents.add(plugin.fromLegacy(" &3[&b#" + comment.getTicketId() + ": " + comment.getSource() + " &3- &b" + CommonUtil.getTimeAgo(comment.getTimestamp().getTime()) + "&3] &7:"));
+                                        contents.add(plugin.fromLegacy("&7 - " + comment.getComment()));
+                                    }
                                 }
                             }
 
@@ -397,7 +408,8 @@ public class read implements CommandExecutor {
                             .padding(plugin.fromLegacy("&b-"))
                             .sendTo(src);
                     return CommandResult.success();
-                } else {
+                }
+                else {
                     throw new CommandException(
                             Messages.getErrorPermission(Permissions.COMMAND_TICKET_READ_SELF));
                 }

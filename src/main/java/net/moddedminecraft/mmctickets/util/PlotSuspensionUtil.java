@@ -17,5 +17,4 @@ public class PlotSuspensionUtil {
         this.plotWorldId = worldId;
         this.suspendedTo = suspendedTo;
     }
-
 }

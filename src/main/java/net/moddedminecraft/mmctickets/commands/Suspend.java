@@ -2,10 +2,11 @@ package net.moddedminecraft.mmctickets.commands;
 
 import com.intellectualcrafters.plot.object.Location;
 import com.intellectualcrafters.plot.object.Plot;
+
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.data.PlotSuspension;
-import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.util.DiscordUtil;
+
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -21,16 +22,16 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class suspend implements CommandExecutor {
+public class Suspend implements CommandExecutor {
     private final Main plugin;
 
-    public suspend ( Main plugin ) {
+    public Suspend(Main plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public CommandResult execute ( CommandSource src, CommandContext args ) throws CommandException {
-        if(!(src instanceof Player)) {
+    public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
+        if (!(src instanceof Player)) {
             src.sendMessage(Text.of(TextColors.RED, "You must be a player to execute this command"));
             return CommandResult.empty();
         }
@@ -46,20 +47,20 @@ public class suspend implements CommandExecutor {
 
         // Get the plot that the player is on
         Plot plot = Plot.getPlot(playerLocation);
-        if(null == plot) {
+        if (null == plot) {
             player.sendMessage(Text.of(TextColors.RED, "You must be on a plot to execute this command"));
             return CommandResult.empty();
         }
 
         // Get the suspension time
         final Optional<String> time = args.getOne("time");
-        if(!time.isPresent()) {
+        if (!time.isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "A time must be specified"));
             return CommandResult.empty();
         }
 
         Optional<Long> timeFromPattern = this.getSecondsFromPattern(time.get());
-        if(!timeFromPattern.isPresent()) {
+        if (!timeFromPattern.isPresent()) {
             player.sendMessage(Text.of(TextColors.RED, "Cannot read given time"));
             return CommandResult.empty();
         }
@@ -96,7 +97,8 @@ public class suspend implements CommandExecutor {
                     seconds += num * unit.getToSecondsMultiplier();
                 }
             }
-        } else return Optional.empty();
+        }
+        else return Optional.empty();
 
         return Optional.of(seconds);
     }
@@ -113,7 +115,7 @@ public class suspend implements CommandExecutor {
 
         TimeUnit(String character, int toSecondsMultiplier) {
             this.character = character;
-            this.toSecondsMultiplier= toSecondsMultiplier;
+            this.toSecondsMultiplier = toSecondsMultiplier;
         }
 
         public int getToSecondsMultiplier() {
