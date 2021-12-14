@@ -114,7 +114,7 @@ public class DiscordUtil {
         if(limitDifference <= 0) return comments;
         int omittedComments = 0;
         for(int i = comments.size() - 1; i >= 0; i--) {
-            if(limitDifference < 0) break;
+            if(limitDifference <= 0) break;
             limitDifference -= comments.get(i).length() + 1; // +1 for every next "\n" (new line) character
             omittedComments++;
         }
