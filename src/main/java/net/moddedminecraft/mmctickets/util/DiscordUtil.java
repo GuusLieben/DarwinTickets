@@ -86,15 +86,12 @@ public class DiscordUtil {
         final List<TicketData> tickets = new ArrayList<>(plugin.getDataStore().getTicketData());
         int ticketNum = (int) tickets.stream().filter(t -> t.getPlayerUUID().equals(ticketData.getPlayerUUID()) && t.getMessage().equals(ticketData.getMessage())).count();
 
-        List<TicketComment> comments = plugin.getDataStore().getComments(ticketData.getMessage(), ticketData.getPlayerUUID());
-        StringBuilder builder = new StringBuilder();
-        for (TicketComment comment : comments) {
-            if (builder.length() > 0) builder.append("\n");
-            builder.append("[").append(comment.getSource()).append(" on #").append(comment.getTicketId()).append("]: ").append(comment.getComment());
-        }
-
-        String comment = builder.toString();
-        if (comments.isEmpty()) comment = "None";
+        final List<TicketComment> ticketComments = plugin.getDataStore().getComments(ticketData.getMessage(), ticketData.getPlayerUUID());
+        final List<String> commentList = ticketComments.stream()
+            .map(comment -> "[" + comment.getSource() + " on #" + comment.getTicketId() + "]: " + comment.getComment())
+            .collect(Collectors.toList());
+        final List<String> truncatedCommentList = truncateCommentsIfExceed(commentList);
+        final String comments = truncatedCommentList.isEmpty() ? "None" : String.join("\n", truncatedCommentList);
 
         EmbedBuilder embedBuilder = new EmbedBuilder()
             .setTitle(ticketStatus.title)
@@ -106,48 +103,28 @@ public class DiscordUtil {
             .addField("World", plot.getWorldName(), true)
             .addField("Plot", plot.getId().toString(), true)
             .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
-            .addField("Comment(s)", comment, true)
+            .addField("Comment(s)", comments, true)
             .addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
 
-        return embedBuilder.isValidLength(AccountType.BOT) ? embedBuilder.build() : truncateEmbedComments(embedBuilder.build(), comments);
+        return embedBuilder.build();
     }
 
-    private static MessageEmbed truncateEmbedComments(final MessageEmbed embed, final List<TicketComment> ticketComments) {
-        final String omittedText = "Comments ommited: ";
-        final List<String> comments = ticketComments.stream()
-            .map(comment -> "[" + comment.getSource() + " on #" + comment.getTicketId() + "]: " + comment.getComment())
-            .collect(Collectors.toList());
-        final int commentsOmitted = calculateOmittedComments(comments, omittedText.length());
-        final List<String> truncatedComments = comments.subList(0, commentsOmitted);
-        truncatedComments.add(omittedText + commentsOmitted);
-
-        EmbedBuilder truncatedEmbedBuilder = new EmbedBuilder()
-            .setTitle(embed.getTitle())
-            .setDescription(embed.getDescription())
-            .setColor(embed.getColor())
-            .setTimestamp(embed.getTimestamp())
-            .setFooter(embed.getFooter().getText(), embed.getFooter().getIconUrl())
-            .setThumbnail(embed.getThumbnail().getUrl());
-
-        for(Field field : embed.getFields()) {
-            if(field.getName().equals("Comment(s)")) field = new Field(field.getName(), String.join("\n", truncatedComments), field.isInline());
-            truncatedEmbedBuilder.addField(field);
-        }
-
-        return truncatedEmbedBuilder.build();
-    }
-
-    private static int calculateOmittedComments(final List<String> comments, final int additionalTextLength) {
-        Collections.reverse(comments);        
+    private static List<String> truncateCommentsIfExceed(final List<String> comments) {
         int limitDifference = comments.size() - MessageEmbed.VALUE_MAX_LENGTH;
+        if(limitDifference <= 0) return comments;
         int omittedComments = 0;
-        for(String comment : comments) {
+        for(int i = comments.size() - 1; i >= 0; i--) {
             if(limitDifference < 0) break;
-            limitDifference -= comment.length() + 1; // +1 for every next "\n" (new line) character
+            limitDifference -= comments.get(i).length() + 1; // +1 for every next "\n" (new line) character
             omittedComments++;
         }
 
-        return limitDifference + (additionalTextLength + omittedComments) > 0 ? omittedComments + 1 : omittedComments; //Skip one more comment if omitted comment info exceeds the limit
+        final String omittedText = "Comments omitted: " + omittedComments;
+        if(limitDifference + omittedText.length() > 0) omittedComments++;
+        List<String> truncatedComments = comments.subList(0, comments.size() - omittedComments);
+        truncatedComments.add(omittedText);
+
+        return truncatedComments;
     }
 
     public static void sendSuspension(String suspendedBy, PlotSuspension suspension) {
