@@ -1,29 +1,33 @@
 package net.moddedminecraft.mmctickets.util;
 
+import java.awt.Color;
+import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import com.intellectualcrafters.plot.object.Plot;
 import com.magitechserver.magibridge.MagiBridge;
 
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.world.World;
+
+import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.MessageEmbed.Field;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.moddedminecraft.mmctickets.Main;
 import net.moddedminecraft.mmctickets.data.PlotSuspension;
 import net.moddedminecraft.mmctickets.data.TicketComment;
 import net.moddedminecraft.mmctickets.data.TicketData;
 import net.moddedminecraft.mmctickets.data.TicketStatus;
-
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.world.World;
-
-import java.awt.Color;
-import java.text.SimpleDateFormat;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
 
 public class DiscordUtil {
 
@@ -93,20 +97,57 @@ public class DiscordUtil {
         if (comments.isEmpty()) comment = "None";
 
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setTitle(ticketStatus.title)
-                .setDescription("Submitted by : " + submitter)
-                .setColor(color)
-                .setTimestamp(OffsetDateTime.now())
-                .setFooter("ID #" + ticketData.getTicketID() + " | Submission #" + (ticketNum + 1), null)
-                .setThumbnail(ticketStatus.imageUrl)
-                .addField("World", plot.getWorldName(), true)
-                .addField("Plot", plot.getId().toString(), true)
-                .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
-                .addField("Comment(s)", comment, true);
+            .setTitle(ticketStatus.title)
+            .setDescription("Submitted by : " + submitter)
+            .setColor(color)
+            .setTimestamp(OffsetDateTime.now())
+            .setFooter("ID #" + ticketData.getTicketID() + " | Submission #" + (ticketNum + 1), null)
+            .setThumbnail(ticketStatus.imageUrl)
+            .addField("World", plot.getWorldName(), true)
+            .addField("Plot", plot.getId().toString(), true)
+            .addField("Player UUID", ticketData.getPlayerUUID().toString(), true)
+            .addField("Comment(s)", comment, true)
+            .addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
 
-        embedBuilder.addField("Handled by", String.join(", ", ticketData.getAdditionalReviewers()), false);
+        return embedBuilder.isValidLength(AccountType.BOT) ? embedBuilder.build() : truncateEmbedComments(embedBuilder.build(), comments);
+    }
 
-        return embedBuilder.build();
+    private static MessageEmbed truncateEmbedComments(final MessageEmbed embed, final List<TicketComment> ticketComments) {
+        final String omittedText = "Comments ommited: ";
+        final List<String> comments = ticketComments.stream()
+            .map(comment -> "[" + comment.getSource() + " on #" + comment.getTicketId() + "]: " + comment.getComment())
+            .collect(Collectors.toList());
+        final int commentsOmitted = calculateOmittedComments(comments, omittedText.length());
+        final List<String> truncatedComments = comments.subList(0, commentsOmitted);
+        truncatedComments.add(omittedText + commentsOmitted);
+
+        EmbedBuilder truncatedEmbedBuilder = new EmbedBuilder()
+            .setTitle(embed.getTitle())
+            .setDescription(embed.getDescription())
+            .setColor(embed.getColor())
+            .setTimestamp(embed.getTimestamp())
+            .setFooter(embed.getFooter().getText(), embed.getFooter().getIconUrl())
+            .setThumbnail(embed.getThumbnail().getUrl());
+
+        for(Field field : embed.getFields()) {
+            if(field.getName().equals("Comment(s)")) field = new Field(field.getName(), String.join("\n", truncatedComments), field.isInline());
+            truncatedEmbedBuilder.addField(field);
+        }
+
+        return truncatedEmbedBuilder.build();
+    }
+
+    private static int calculateOmittedComments(final List<String> comments, final int additionalTextLength) {
+        Collections.reverse(comments);        
+        int limitDifference = comments.size() - MessageEmbed.VALUE_MAX_LENGTH;
+        int omittedComments = 0;
+        for(String comment : comments) {
+            if(limitDifference < 0) break;
+            limitDifference -= comment.length() + 1; // +1 for every next "\n" (new line) character
+            omittedComments++;
+        }
+
+        return limitDifference + (additionalTextLength + omittedComments) > 0 ? omittedComments + 1 : omittedComments; //Skip one more comment if omitted comment info exceeds the limit
     }
 
     public static void sendSuspension(String suspendedBy, PlotSuspension suspension) {
